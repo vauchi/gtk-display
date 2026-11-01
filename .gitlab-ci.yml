@@ -276,10 +276,10 @@ test:snapshots:
 # light theme, large text) under build/screen-catalog/. No navigation is
 # driven, so unlike test:snapshots it cannot flake on AT-SPI timing.
 #
-# The catalog comes from Core main through the raw-file API; while
-# `vauchi-app/fixtures/screen_catalog_v1.json` is not merged there yet,
-# the presentation contract's batches (same Command shape) are rendered
-# instead, and the trace says which source was used. `allow_failure`
+# The catalog comes from the contract repository (vauchi/contract,
+# ADR-078) through the raw-file API; if `fixtures/screen_catalog_v1.json`
+# cannot be read, the presentation contract's batches (same Command
+# shape) are rendered instead, and the trace says which source was used. `allow_failure`
 # until the real catalog lands and the job has proven stable on allyson.
 test:screen-catalog:
   allow_failure: true
@@ -293,7 +293,7 @@ test:screen-catalog:
     VRT_PLATFORM: linux-gtk
     VRT_SCREENSHOT_DIR: build/screen-catalog
     CATALOG_OUT_DIR: build/screen-catalog
-    CORE_FIXTURES_API: "${CI_API_V4_URL}/projects/vauchi%2Fcore/repository/files/vauchi-app%2Ffixtures"
+    CONTRACT_FIXTURES_API: "${CI_API_V4_URL}/projects/vauchi%2Fcontract/repository/files/fixtures"
     # The light variant needs a light theme; Core built from a cargo git
     # checkout compiles in only the default dark one, so the renderer reads
     # the catalog `.clone-themes` generates from the sibling repo instead.
@@ -304,23 +304,23 @@ test:screen-catalog:
   script:
     - mkdir -p "$CATALOG_OUT_DIR"
     - |
-      fetch_core_fixture() {
+      fetch_contract_fixture() {
         curl -fsSL -u "gitlab-ci-token:${CI_JOB_TOKEN}" \
-          "${CORE_FIXTURES_API}%2F${1}/raw?ref=main" -o "build/${1}"
+          "${CONTRACT_FIXTURES_API}%2F${1}/raw?ref=main" -o "build/${1}"
       }
-      if fetch_core_fixture screen_catalog_v1.json; then
+      if fetch_contract_fixture screen_catalog_v1.json; then
         CATALOG=build/screen_catalog_v1.json
-        CATALOG_SOURCE="core main screen_catalog_v1.json"
-      elif fetch_core_fixture presentation_contract_v1.json; then
+        CATALOG_SOURCE="contract main screen_catalog_v1.json"
+      elif fetch_contract_fixture presentation_contract_v1.json; then
         CATALOG=build/presentation_contract_v1.json
-        CATALOG_SOURCE="FALLBACK core main presentation_contract_v1.json (screen catalog not on Core main yet)"
+        CATALOG_SOURCE="FALLBACK contract main presentation_contract_v1.json (screen catalog unreadable)"
       else
-        # Last resort: the pinned vauchi-app checkout cargo already fetched
-        # for build:app carries the contract fixture too.
+        # Last resort: the vauchi-contract checkout cargo already fetched for
+        # build:app (Core depends on it) carries the fixture too.
         CATALOG=$(find "${CARGO_HOME:-$HOME/.cargo}/git/checkouts" \
-          -path '*/vauchi-app/fixtures/presentation_contract_v1.json' | head -n 1)
-        [ -n "$CATALOG" ] || { echo "no catalog source reachable (Core raw API and cargo checkout)"; exit 1; }
-        CATALOG_SOURCE="FALLBACK pinned cargo checkout $CATALOG (Core raw API unreachable)"
+          -path '*/contract-*/*/fixtures/presentation_contract_v1.json' | head -n 1)
+        [ -n "$CATALOG" ] || { echo "no catalog source reachable (contract raw API and cargo checkout)"; exit 1; }
+        CATALOG_SOURCE="FALLBACK pinned cargo checkout $CATALOG (contract raw API unreachable)"
       fi
       echo "catalog source: $CATALOG_SOURCE"
       echo "$CATALOG_SOURCE" > "$CATALOG_OUT_DIR/SOURCE.txt"
