@@ -2902,7 +2902,7 @@ dependencies = [
 [[package]]
 name = "rqrr"
 version = "0.11.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.95.0#dd78641a2f19e1640d5af8c6597f31e84bf2401e"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
 dependencies = [
  "g2p",
  "image",
@@ -3800,8 +3800,8 @@ dependencies = [
 
 [[package]]
 name = "vauchi-app"
-version = "0.95.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.95.0#dd78641a2f19e1640d5af8c6597f31e84bf2401e"
+version = "0.96.1"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
 dependencies = [
  "base64",
  "flate2",
@@ -3814,14 +3814,26 @@ dependencies = [
  "tokio",
  "tracing",
  "ureq",
+ "vauchi-contract",
  "vauchi-core",
  "zeroize",
 ]
 
 [[package]]
+name = "vauchi-contract"
+version = "0.95.1"
+source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.95.1#097757f7dcc0ee969bb3bdc57302614dc7248e1e"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "zeroize",
+]
+
+[[package]]
 name = "vauchi-core"
-version = "0.95.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.95.0#dd78641a2f19e1640d5af8c6597f31e84bf2401e"
+version = "0.96.1"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
 dependencies = [
  "argon2",
  "base64",
@@ -3856,6 +3868,7 @@ dependencies = [
  "ureq",
  "url",
  "uuid",
+ "vauchi-contract",
  "vauchi-protocol",
  "webpki-roots",
  "x25519-dalek",
@@ -3879,27 +3892,27 @@ dependencies = [
  "tokio",
  "vauchi-app",
  "vauchi-core",
- "vauchi-hardware",
+ "vauchi-linux-hw",
  "yeslogic-fontconfig-sys",
 ]
 
 [[package]]
-name = "vauchi-hardware"
+name = "vauchi-linux-hw"
 version = "0.95.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.95.0#dd78641a2f19e1640d5af8c6597f31e84bf2401e"
+source = "git+https://gitlab.com/vauchi/linux-hw.git?tag=v0.95.0#07935afc8df90326a3fae215029902e9b02851af"
 dependencies = [
  "futures-util",
  "thiserror 2.0.18",
  "tokio",
  "uuid",
- "vauchi-core",
+ "vauchi-contract",
  "zbus",
 ]
 
 [[package]]
 name = "vauchi-protocol"
-version = "0.95.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.95.0#dd78641a2f19e1640d5af8c6597f31e84bf2401e"
+version = "0.96.1"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
 dependencies = [
  "serde",
  "serde_json",

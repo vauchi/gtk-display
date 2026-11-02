@@ -27,9 +27,11 @@ nfc = ["dep:pcsc"]
 mdns = ["dep:mdns-sd"]
 
 [dependencies]
-vauchi-core = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.95.0", version = "=0.95.0", features = ["secure-storage-linux"] }
-vauchi-app = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.95.0", version = "=0.95.0", default-features = false, features = ["network", "content-updates"] }
-vauchi-hardware = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.95.0", version = "=0.95.0", optional = true }
+vauchi-core = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.96.1", version = "=0.96.1", features = ["secure-storage-linux"] }
+vauchi-app = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.96.1", version = "=0.96.1", default-features = false, features = ["network", "content-updates"] }
+# The Linux hardware shell (ADR-077), pinned by tag like Core; the key keeps
+# the old crate name so the source files that import it are unchanged.
+vauchi-hardware = { package = "vauchi-linux-hw", git = "https://gitlab.com/vauchi/linux-hw.git", tag = "v0.95.0", version = "=0.95.0", optional = true }
 gtk4 = { version = "0.9", features = ["v4_10"] }
 libadwaita = { version = "0.7", features = ["v1_4"] }
 qrcode = { version = "0.14", default-features = false }
@@ -71,7 +73,7 @@ glib-build-tools = "0.20"
 
 [dev-dependencies]
 tempfile = "3.0"
-vauchi-hardware = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.95.0", version = "=0.95.0", features = ["fake-bluez"] }
+vauchi-hardware = { package = "vauchi-linux-hw", git = "https://gitlab.com/vauchi/linux-hw.git", tag = "v0.95.0", version = "=0.95.0", features = ["fake-bluez"] }
 
 # Release profile: optimized binary (matches cli/tui)
 [profile.release]
@@ -99,4 +101,4 @@ split-debuginfo = "off"
 # tests/rqrr_patch_reaches_this_shell.rs fails the moment this is lost.
 # Record: _private/docs/problems/2026-09-10-linux-gtk-unpatched-rqrr-abort-path/
 [patch.crates-io]
-rqrr = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.95.0" }
+rqrr = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.96.1" }
