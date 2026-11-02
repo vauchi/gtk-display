@@ -36,6 +36,11 @@ pub(crate) fn handle_exchange_commands(
     let mut notified_unavailable: HashSet<&str> = HashSet::new();
 
     for cmd in commands {
+        if crate::core_ui::hardware_link::route_installed(cmd)
+            == crate::core_ui::hardware_link::Routed::ToHardware
+        {
+            continue;
+        }
         match cmd {
             Command::QrDisplay { .. } => {
                 // The paired ReplaceSurface command already carries the
@@ -45,218 +50,34 @@ pub(crate) fn handle_exchange_commands(
                 scan_or_paste_qr(container, app_engine, toast_overlay);
             }
 
-            // ── Audio (ultrasonic proximity) ─────────────────────────
-            Command::AudioEmitChallenge {
-                samples,
-                sample_rate,
-            } => {
-                if hardware::has_audio() {
-                    #[cfg(feature = "audio")]
-                    {
-                        crate::platform::audio::emit_challenge(
-                            container,
-                            app_engine,
-                            toast_overlay,
-                            samples.clone(),
-                            *sample_rate,
-                        );
-                    }
-                    #[cfg(not(feature = "audio"))]
-                    {
-                        let _ = (samples, sample_rate);
-                        if notified_unavailable.insert("audio") {
-                            let msg = app_engine.string("platform.audio_built_without_feature");
-                            let toast = adw::Toast::new(&msg);
-                            toast_overlay.add_toast(toast);
-                        }
-                    }
-                } else if notified_unavailable.insert("audio") {
+            // ── Hardware ports (BLE, NFC, audio) ─────────────────────
+            // linux-hw runs these through the hardware link (ADR-078 step
+            // 3a); they reach this arm only when no link is installed — a
+            // build without hardware features, or a shell that did not
+            // start — and Core then learns the transport is unavailable.
+            Command::AudioEmitChallenge { .. } | Command::AudioListenForResponse { .. } => {
+                if notified_unavailable.insert("audio") {
                     report_hardware_unavailable(container, app_engine, toast_overlay, "Audio");
                 }
             }
-            Command::AudioListenForResponse { timeout_ms, .. } => {
-                if hardware::has_audio() {
-                    #[cfg(feature = "audio")]
-                    {
-                        crate::platform::audio::listen_for_response(
-                            container,
-                            app_engine,
-                            toast_overlay,
-                            *timeout_ms,
-                        );
-                    }
-                    #[cfg(not(feature = "audio"))]
-                    {
-                        let _ = timeout_ms;
-                        if notified_unavailable.insert("audio") {
-                            let msg = app_engine.string("platform.audio_built_without_feature");
-                            let toast = adw::Toast::new(&msg);
-                            toast_overlay.add_toast(toast);
-                        }
-                    }
-                } else if notified_unavailable.insert("audio") {
-                    report_hardware_unavailable(container, app_engine, toast_overlay, "Audio");
+            Command::BleStartScanning { .. }
+            | Command::BleStartAdvertising { .. }
+            | Command::BleConnect { .. }
+            | Command::BleWriteCharacteristic { .. }
+            | Command::BleReadCharacteristic { .. } => {
+                if notified_unavailable.insert("ble") {
+                    report_hardware_unavailable(container, app_engine, toast_overlay, "BLE");
                 }
             }
-            Command::AudioStop => {
-                #[cfg(feature = "audio")]
-                crate::platform::audio::stop();
-            }
-
-            // ── BLE ──────────────────────────────────────────────────
-            Command::BleStartScanning { service_uuid } => {
-                if hardware::has_bluetooth() {
-                    #[cfg(all(feature = "ble", target_os = "linux"))]
-                    {
-                        crate::platform::ble::start_scanning(
-                            container,
-                            app_engine,
-                            toast_overlay,
-                            service_uuid.clone(),
-                        );
-                    }
-                    #[cfg(not(all(feature = "ble", target_os = "linux")))]
-                    {
-                        let _ = service_uuid;
-                        if notified_unavailable.insert("ble") {
-                            let msg = app_engine.string("platform.ble_built_without_feature");
-                            let toast = adw::Toast::new(&msg);
-                            toast_overlay.add_toast(toast);
-                        }
-                    }
-                } else if notified_unavailable.insert("ble") {
-                    report_hardware_unavailable(
-                        container,
-                        app_engine,
-                        toast_overlay,
-                        "Bluetooth LE",
-                    );
-                }
-            }
-            Command::BleStopScanning => {
-                #[cfg(all(feature = "ble", target_os = "linux"))]
-                crate::platform::ble::stop_scanning();
-            }
-            Command::BleStartAdvertising {
-                service_uuid,
-                payload: _,
-            } => {
-                if hardware::has_bluetooth() {
-                    #[cfg(all(feature = "ble", target_os = "linux"))]
-                    {
-                        crate::platform::ble::start_advertising(
-                            toast_overlay,
-                            service_uuid.clone(),
-                        );
-                    }
-                    #[cfg(not(all(feature = "ble", target_os = "linux")))]
-                    {
-                        let _ = service_uuid;
-                    }
-                } else if notified_unavailable.insert("ble") {
-                    report_hardware_unavailable(
-                        container,
-                        app_engine,
-                        toast_overlay,
-                        "Bluetooth LE",
-                    );
-                }
-            }
-            Command::BleConnect { device_id } => {
-                #[cfg(all(feature = "ble", target_os = "linux"))]
-                {
-                    crate::platform::ble::connect(
-                        container,
-                        app_engine,
-                        toast_overlay,
-                        device_id.clone(),
-                    );
-                }
-                #[cfg(not(all(feature = "ble", target_os = "linux")))]
-                {
-                    let _ = device_id;
-                }
-            }
-            Command::BleWriteCharacteristic { uuid, data, .. } => {
-                #[cfg(all(feature = "ble", target_os = "linux"))]
-                {
-                    crate::platform::ble::write_characteristic(
-                        container,
-                        app_engine,
-                        toast_overlay,
-                        uuid.clone(),
-                        data.clone(),
-                    );
-                }
-                #[cfg(not(all(feature = "ble", target_os = "linux")))]
-                {
-                    let _ = (uuid, data);
-                }
-            }
-            Command::BleReadCharacteristic {
-                device_id,
-                direction,
-                uuid,
-            } => {
-                #[cfg(all(feature = "ble", target_os = "linux"))]
-                {
-                    crate::platform::ble::read_characteristic(
-                        container,
-                        app_engine,
-                        toast_overlay,
-                        device_id.clone(),
-                        *direction,
-                        uuid.clone(),
-                    );
-                }
-                #[cfg(not(all(feature = "ble", target_os = "linux")))]
-                {
-                    let _ = (device_id, direction, uuid);
-                }
-            }
-            Command::BleDisconnect { .. } => {
-                #[cfg(all(feature = "ble", target_os = "linux"))]
-                crate::platform::ble::disconnect(toast_overlay);
-            }
-
-            // ── NFC ──────────────────────────────────────────────────
-            // A reader transmits Core's frames and ignores `payload`, which
-            // stays for shells that still frame on their own (#764).
-            Command::NfcActivate { apdus, .. } => {
-                if hardware::has_nfc() {
-                    #[cfg(feature = "nfc")]
-                    {
-                        crate::platform::nfc::activate(
-                            container,
-                            app_engine,
-                            toast_overlay,
-                            apdus.clone(),
-                        );
-                    }
-                    #[cfg(not(feature = "nfc"))]
-                    {
-                        let _ = apdus;
-                        if notified_unavailable.insert("nfc") {
-                            let msg = app_engine.string("platform.nfc_built_without_feature");
-                            let toast = adw::Toast::new(&msg);
-                            toast_overlay.add_toast(toast);
-                        }
-                    }
-                } else if notified_unavailable.insert("nfc") {
+            Command::NfcActivate { .. } | Command::NfcSendApdu { .. } => {
+                if notified_unavailable.insert("nfc") {
                     report_hardware_unavailable(container, app_engine, toast_overlay, "NFC");
                 }
             }
-            Command::NfcSendApdu { apdus, .. } => {
-                #[cfg(feature = "nfc")]
-                crate::platform::nfc::send(apdus.clone());
-                #[cfg(not(feature = "nfc"))]
-                let _ = apdus;
-            }
-            Command::NfcDeactivate => {
-                #[cfg(feature = "nfc")]
-                crate::platform::nfc::deactivate();
-            }
-
+            Command::AudioStop
+            | Command::BleStopScanning
+            | Command::BleDisconnect { .. }
+            | Command::NfcDeactivate => {}
             // ── Image picking (avatar editor) ────────────────────────
             Command::ImagePickFromFile => {
                 file_picker::open_image_picker(container, app_engine, toast_overlay);

@@ -68,7 +68,9 @@ pub fn run() {
     app.connect_activate(build_ui);
     app.connect_open(open_deep_links);
     #[cfg(all(feature = "ble", target_os = "linux"))]
-    app.connect_shutdown(|_| platform::ble::dispose_scanning());
+    // Drop the hardware shell (its runtime, its BlueZ sessions) before the
+    // process exits; a thread-local dropped after Tokio's own aborts.
+    app.connect_shutdown(|_| crate::core_ui::hardware_link::uninstall());
     let weak_app = app.downgrade();
     platform::notifications::install_open_action(&app, move |uri| {
         if let Some(app) = weak_app.upgrade() {
@@ -172,6 +174,7 @@ fn build_ui(app: &adw::Application) {
     root.append(&split_view);
 
     register_wakeup_poll(&engine_handle, &content, &toast_overlay);
+    install_hardware(&engine_handle, &content, &toast_overlay);
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
@@ -356,3 +359,39 @@ pub(crate) fn arm_wakeup(
         *pending.borrow_mut() = Some(source_id);
     });
 }
+
+/// Start linux-hw's hardware shell, report its capabilities to Core and
+/// route the hardware commands it ports to it (ADR-078 step 3a). Without
+/// any hardware feature, or when the shell cannot start, the renderer keeps
+/// every command and Core learns of no capability.
+#[cfg(any(
+    feature = "ble",
+    feature = "nfc",
+    feature = "audio",
+    feature = "camera"
+))]
+fn install_hardware(engine: &EngineHandle, content: &GtkBox, toast_overlay: &adw::ToastOverlay) {
+    let hardware = match vauchi_hardware::LinuxHardware::start() {
+        Ok(hardware) => hardware,
+        Err(error) => {
+            eprintln!("[hardware] linux-hw did not start: {error}");
+            return;
+        }
+    };
+    let link = platform::linux_hardware_link::LinuxHardwareLink::new(hardware);
+    crate::core_ui::contextual_surface::dispatch_platform_event(
+        content,
+        engine,
+        toast_overlay,
+        link.report(),
+    );
+    crate::core_ui::hardware_link::install(Rc::new(link), content, engine, toast_overlay);
+}
+
+#[cfg(not(any(
+    feature = "ble",
+    feature = "nfc",
+    feature = "audio",
+    feature = "camera"
+)))]
+fn install_hardware(_: &EngineHandle, _: &GtkBox, _: &adw::ToastOverlay) {}

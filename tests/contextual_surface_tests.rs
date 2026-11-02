@@ -495,11 +495,10 @@ fn live_platform_callbacks_report_raw_events_to_the_generic_reducer() {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     for relative in [
         "src/core_ui/action_dispatcher.rs",
+        "src/core_ui/hardware_link.rs",
         "src/seed_identity.rs",
-        "src/platform/audio.rs",
-        "src/platform/ble.rs",
         "src/platform/camera.rs",
-        "src/platform/nfc.rs",
+        "src/platform/linux_hardware_link.rs",
     ] {
         let source = std::fs::read_to_string(manifest.join(relative)).expect("read GTK source");
         for legacy_boundary in [
