@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The camera path decodes with `vauchi_core::qr::scan_qr_from_luma`, whose
-//! only crash guard lives in core's vendored `rqrr` fork. A `[patch]` applies
-//! solely inside the workspace that declares it, so without a stanza of our
+//! The camera path decodes with `vauchi_linux_hw::qr::scan_qr_from_luma`
+//! (and `vauchi-core` still links its own copy of the decoder), whose only
+//! crash guard lives in the `rqrr` fork in `vauchi/utils/rqrr`. A `[patch]`
+//! applies solely inside the workspace that declares it, so without a stanza of our
 //! own this crate resolves upstream `rqrr` from crates.io — unclamped — under
 //! `panic = "abort"`. This test reads the lock file the binary was built from
 //! and fails the moment `rqrr` resolves from the registry again — including
@@ -30,7 +31,7 @@ fn rqrr_sources() -> Vec<String> {
 
 // @scenario: exchange :: A malformed QR frame never aborts the desktop shell
 #[test]
-fn rqrr_resolves_from_the_vendored_fork_not_the_registry() {
+fn rqrr_resolves_from_the_fork_not_the_registry() {
     let sources = rqrr_sources();
     assert_eq!(
         sources.len(),
@@ -38,8 +39,9 @@ fn rqrr_resolves_from_the_vendored_fork_not_the_registry() {
         "exactly one rqrr must resolve; two means the redirect names a stale tag: {sources:?}"
     );
     assert!(
-        sources[0].starts_with("git+https://gitlab.com/vauchi/core.git"),
-        "rqrr must come from core's vendored fork (clamped perspective), got: {}",
+        sources[0]
+            .starts_with("git+https://gitlab.com/vauchi/utils/rqrr.git?tag=v0.11.0%2Bvauchi."),
+        "rqrr must come from the fork in vauchi/utils/rqrr by tag (clamped perspective), got: {}",
         sources[0]
     );
 }
