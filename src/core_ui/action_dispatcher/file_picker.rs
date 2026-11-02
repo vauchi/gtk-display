@@ -6,17 +6,16 @@
 use gtk4::Box as GtkBox;
 use gtk4::prelude::*;
 use libadwaita as adw;
-use std::cell::RefCell;
-use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{Event, ExportFileSpec};
+
+use crate::core_ui::engine_link::EngineHandle;
 
 use crate::core_ui::contextual_surface::dispatch_platform_event;
 
 pub(super) fn open_file_picker(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     accepted_mime_types: &[String],
 ) {
@@ -69,7 +68,7 @@ pub(super) fn open_file_picker(
 
 pub(super) fn open_image_picker(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     let Some(window) = parent_window(container) else {
@@ -111,7 +110,7 @@ pub(super) fn open_image_picker(
 
 pub(super) fn open_export(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     export: ExportFileSpec,
 ) {
@@ -155,7 +154,7 @@ fn parent_window(container: &GtkBox) -> Option<gtk4::Window> {
 
 fn report_read_error(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     dispatch_platform_event(

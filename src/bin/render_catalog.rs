@@ -26,6 +26,8 @@
 //! Accepts the screen catalog (`screens[]`) or, as a fallback, the
 //! presentation contract fixture (`initial_commands` + `steps[]`).
 
+use vauchi_gtk::core_ui::engine_link::EngineHandle;
+
 use std::cell::{Cell, RefCell};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
@@ -250,7 +252,7 @@ struct CatalogWindow {
     split_view: adw::OverlaySplitView,
     /// Replaced before every job (`fresh_toast_overlay`), never reused.
     toast_overlay: RefCell<adw::ToastOverlay>,
-    app_engine: Rc<RefCell<AppEngine>>,
+    app_engine: EngineHandle,
 }
 
 impl CatalogWindow {
@@ -277,7 +279,7 @@ impl CatalogWindow {
 /// split view whose content pane is the toast-wrapped command target.
 fn build_app_window(app: &adw::Application, width: i32, height: i32) -> CatalogWindow {
     vauchi_gtk::core_ui::fonts::register_app_fonts();
-    let app_engine = Rc::new(RefCell::new(AppEngine::new(
+    let app_engine: EngineHandle = Rc::new(RefCell::new(AppEngine::new(
         Vauchi::in_memory().expect("in-memory Core for the catalog harness"),
     )));
 

@@ -7,12 +7,12 @@ use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Button, Label, Widget};
 use libadwaita as adw;
 use std::cell::RefCell;
-use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{
     ActionTone, Command, ContextBar, Event, InteractionId, StandardShortcut, SurfaceId,
 };
+
+use crate::core_ui::engine_link::{EngineHandle, EngineLink};
 
 use crate::core_ui::accessibility;
 use crate::platform::header_bar::SURFACE_TITLE_BAR_NAME;
@@ -37,14 +37,15 @@ thread_local! {
 
 pub(crate) fn render_current_surface(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     environment::report_environment(container, app_engine);
 
-    let Ok(commands) = app_engine.borrow_mut().initial_commands() else {
+    let commands = app_engine.initial_commands();
+    if commands.is_empty() {
         return;
-    };
+    }
     super::commands::handle_commands(container, app_engine, toast_overlay, commands, None);
 }
 
@@ -56,7 +57,7 @@ pub(crate) fn render_current_surface(
 /// draws in the surface content (`render_primary_button`).
 pub(super) fn render_title_row(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: &SurfaceId,
     title: &str,
@@ -121,7 +122,7 @@ pub(super) fn render_title_row(
 /// surface's `ScrolledWindow`, so no layout branch is needed here).
 pub(super) fn render_primary_button(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: &SurfaceId,
     action: &vauchi_core::ActionSpec,
@@ -147,7 +148,7 @@ fn wire_context_button(
     surface_id: &SurfaceId,
     interaction_id: &InteractionId,
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     let interaction_id = interaction_id.clone();
@@ -254,7 +255,7 @@ fn build_button(
 
 pub(crate) fn dispatch_shortcut(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     shortcut: StandardShortcut,
 ) -> bool {
@@ -280,7 +281,7 @@ pub(crate) fn dispatch_shortcut(
 
 pub(crate) fn request_back(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) -> bool {
     let surface_id = COMMAND_STATE.with(|state| {
@@ -314,7 +315,7 @@ pub(crate) fn request_back(
 
 pub(super) fn dispatch_interaction(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: &SurfaceId,
     interaction_id: &InteractionId,
@@ -336,7 +337,7 @@ pub(super) fn dispatch_interaction(
 
 pub(crate) fn dispatch_platform_event(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     event: Event,
 ) {
@@ -355,7 +356,7 @@ pub(crate) fn dispatch_platform_event(
 /// — instead of at each call site.
 pub(super) fn dispatch_event(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     event: Event,
     origin: Option<&InteractionId>,
@@ -365,7 +366,7 @@ pub(super) fn dispatch_event(
     let toast_overlay = toast_overlay.clone();
     let origin = origin.cloned();
     glib::idle_add_local_once(move || {
-        let commands = commands_for_event(&app_engine, event);
+        let commands = commands_for_event(app_engine.as_ref(), event);
         super::commands::handle_commands(
             &container,
             &app_engine,
@@ -377,11 +378,6 @@ pub(super) fn dispatch_event(
 }
 
 /// The batch the shell applies for one event, rejected or not.
-pub fn commands_for_event(app_engine: &RefCell<AppEngine>, event: Event) -> Vec<Command> {
-    let outcome = app_engine.borrow_mut().dispatch(event);
-    outcome.unwrap_or_else(|error| {
-        // The kind only: a rejection's Display text can echo user input.
-        eprintln!("[CoreUI] Failed: dispatch rejected: {}", error.kind());
-        app_engine.borrow().reject_dispatch(&error)
-    })
+pub fn commands_for_event<L: EngineLink + ?Sized>(link: &L, event: Event) -> Vec<Command> {
+    link.dispatch(event)
 }

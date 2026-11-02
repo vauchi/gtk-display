@@ -6,10 +6,8 @@
 use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Orientation, Separator};
 use libadwaita as adw;
-use std::cell::RefCell;
 use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{Command, InteractionId, SurfaceId};
 
 use super::widgets::{
@@ -17,11 +15,12 @@ use super::widgets::{
     render_title_row,
 };
 use super::{environment, overlays, sidebar};
+use crate::core_ui::engine_link::EngineHandle;
 use crate::core_ui::generic_surface::{self, OnEvent};
 
 pub(crate) fn handle_commands(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     commands: Vec<Command>,
     origin: Option<&InteractionId>,
@@ -130,7 +129,7 @@ pub(crate) fn handle_commands(
 
 fn render_presentation(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     let focus_name = current_focus_name(container);

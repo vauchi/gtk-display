@@ -7,11 +7,12 @@ use gtk4::{Box as GtkBox, Button, Orientation};
 use libadwaita as adw;
 use libadwaita::prelude::MessageDialogExt as _;
 use std::borrow::Cow;
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{Event, MotionPreference, OverlayKind, OverlaySpec, SurfaceId};
+
+use crate::core_ui::engine_link::EngineHandle;
 
 use crate::core_ui::navigation_icons::resolve_icon_name;
 
@@ -19,7 +20,7 @@ use super::widgets::{dispatch_event, dispatch_interaction};
 
 pub(super) fn present(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: SurfaceId,
     overlay: OverlaySpec,
@@ -52,7 +53,7 @@ pub(super) fn present(
 /// forgets the overlay.
 fn present_information(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: SurfaceId,
     overlay: OverlaySpec,
@@ -106,7 +107,7 @@ fn close_label(overlay: &OverlaySpec) -> Cow<'_, str> {
 
 fn present_navigation(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: SurfaceId,
     overlay: OverlaySpec,
@@ -212,7 +213,7 @@ fn present_navigation(
 
 fn present_action_menu(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: SurfaceId,
     overlay: OverlaySpec,

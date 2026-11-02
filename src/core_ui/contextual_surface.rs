@@ -17,12 +17,10 @@ pub(crate) use widgets::{
     dispatch_platform_event, dispatch_shortcut, render_current_surface, request_back,
 };
 
-use std::cell::RefCell;
+use crate::core_ui::engine_link::EngineHandle;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use libadwaita as adw;
-use vauchi_app::ui::AppEngine;
 
 /// Replay one Core batch from a cold presentation state, exactly as the
 /// app applies it (`handle_commands`: surfaces, context bar, sidebar).
@@ -32,7 +30,7 @@ use vauchi_app::ui::AppEngine;
 /// veto a later one and nothing leaks between captures.
 pub fn replay_command_batch(
     container: &gtk4::Box,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     commands: Vec<Command>,
 ) {

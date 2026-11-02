@@ -6,15 +6,15 @@
 //! connection. Every response reaches Core as an event on the main loop.
 #[cfg(feature = "nfc")]
 mod inner {
-    use std::cell::{Cell, RefCell};
-    use std::rc::Rc;
+    use std::cell::Cell;
     use std::sync::{Arc, Mutex};
 
     use libadwaita as adw;
 
-    use vauchi_app::ui::AppEngine;
     use vauchi_core::Event;
     use vauchi_hardware::{NfcSession, PcscReader};
+
+    use crate::core_ui::engine_link::EngineHandle;
 
     use crate::platform::executors::{INBOX_LIMITS, lock, pump, runtime};
 
@@ -44,7 +44,7 @@ mod inner {
     /// `NfcActivate`: wait for a tag, then transmit Core's frames.
     pub fn activate(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         apdus: Vec<Vec<u8>>,
     ) {

@@ -10,9 +10,8 @@
 
 #[cfg(all(feature = "ble", target_os = "linux"))]
 mod inner {
-    use std::cell::{Cell, RefCell};
+    use std::cell::Cell;
     use std::collections::HashMap;
-    use std::rc::Rc;
     use std::sync::Mutex as StdMutex;
     use std::sync::mpsc;
 
@@ -20,8 +19,9 @@ mod inner {
     use libadwaita as adw;
 
     use vauchi_app::i18n::{self, Locale};
-    use vauchi_app::ui::AppEngine;
     use vauchi_core::{BleLinkDirection, Event};
+
+    use crate::core_ui::engine_link::EngineHandle;
 
     use crate::core_ui::contextual_surface::dispatch_platform_event;
     use crate::platform::ble_discovery::DiscoveryHost;
@@ -69,7 +69,7 @@ mod inner {
     /// it stops the scan or starts another.
     pub fn start_scanning(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         service_uuid: String,
     ) {
@@ -191,7 +191,7 @@ mod inner {
     /// Connect to a BLE device and report the result.
     pub fn connect(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         device_id: String,
     ) {
@@ -301,7 +301,7 @@ mod inner {
     /// Write data to a GATT characteristic.
     pub fn write_characteristic(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         uuid: String,
         data: Vec<u8>,
@@ -357,7 +357,7 @@ mod inner {
     /// Read data from a GATT characteristic.
     pub fn read_characteristic(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         device_id: String,
         direction: BleLinkDirection,

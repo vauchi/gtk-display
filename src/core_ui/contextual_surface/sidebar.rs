@@ -16,11 +16,10 @@ use gtk4::{
     PolicyType, ScrolledWindow, SelectionMode,
 };
 use libadwaita as adw;
-use std::cell::RefCell;
-use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{InteractionId, NavigationItem, NavigationSpec};
+
+use crate::core_ui::engine_link::EngineHandle;
 
 use crate::core_ui::accessibility;
 use crate::core_ui::navigation_icons::resolve_icon_name;
@@ -61,7 +60,7 @@ impl SidebarModel {
 /// button does.
 pub fn build_split_view(
     command_target: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) -> adw::OverlaySplitView {
     let split_view = adw::OverlaySplitView::new();
@@ -81,7 +80,7 @@ pub fn build_split_view(
 
 fn build_wrapper(
     command_target: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) -> GtkBox {
     let wrapper = GtkBox::new(Orientation::Vertical, 0);

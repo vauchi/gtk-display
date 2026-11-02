@@ -7,15 +7,15 @@
 //! it as `HardwareError` on "Audio", and the shell shows nothing of its own.
 #[cfg(feature = "audio")]
 mod inner {
-    use std::cell::{Cell, RefCell};
-    use std::rc::Rc;
+    use std::cell::Cell;
     use std::sync::{Arc, Mutex};
 
     use libadwaita as adw;
 
-    use vauchi_app::ui::AppEngine;
     use vauchi_core::Event;
     use vauchi_hardware::{AudioSession, CpalAudio};
+
+    use crate::core_ui::engine_link::EngineHandle;
 
     use crate::platform::executors::{INBOX_LIMITS, lock, pump, runtime};
 
@@ -45,7 +45,7 @@ mod inner {
 
     fn ensure_pump(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
     ) {
         if PUMPING.with(Cell::get) {
@@ -65,7 +65,7 @@ mod inner {
     /// `AudioEmitChallenge`: play Core's pre-encoded samples.
     pub fn emit_challenge(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         samples: Vec<f32>,
         sample_rate: u32,
@@ -79,7 +79,7 @@ mod inner {
     /// `AudioListenForResponse`: record for `timeout_ms`, then report.
     pub fn listen_for_response(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
         timeout_ms: u64,
     ) {

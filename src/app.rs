@@ -18,6 +18,7 @@ use vauchi_core::{Event, StandardShortcut};
 use crate::core_ui::contextual_surface::{
     build_split_view, dispatch_platform_event, render_current_surface,
 };
+use crate::core_ui::engine_link::EngineHandle;
 use crate::locale::detect_locale;
 use crate::platform;
 
@@ -141,7 +142,8 @@ fn build_ui(app: &adw::Application) {
     }
     app_engine.bootstrap();
     let app_engine = Rc::new(RefCell::new(app_engine));
-    platform::network_cost::watch(&app_engine);
+    let engine_handle: EngineHandle = app_engine.clone();
+    platform::network_cost::watch(&engine_handle);
 
     // Main layout: header + body
     let root = GtkBox::new(Orientation::Vertical, 0);
@@ -165,11 +167,11 @@ fn build_ui(app: &adw::Application) {
     // F6/D4: a persistent sidebar for the destinations Core publishes via
     // `SetNavigation`, alongside the toast-wrapped content pane. Core's
     // navigation overlay still opens on request, sidebar shown or not.
-    let split_view = build_split_view(&content, &app_engine, &toast_overlay);
+    let split_view = build_split_view(&content, &engine_handle, &toast_overlay);
 
     root.append(&split_view);
 
-    register_wakeup_poll(&app_engine, &content, &toast_overlay);
+    register_wakeup_poll(&engine_handle, &content, &toast_overlay);
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
@@ -187,14 +189,14 @@ fn build_ui(app: &adw::Application) {
     register_event_handler(&app_engine, &content, &toast_overlay);
 
     {
-        let app_engine = app_engine.clone();
+        let engine_handle = engine_handle.clone();
         let content = content.clone();
         let toast_overlay = toast_overlay.clone();
         OPEN_DEEP_LINK.with(|open| {
             *open.borrow_mut() = Some(Box::new(move |uri| {
                 dispatch_platform_event(
                     &content,
-                    &app_engine,
+                    &engine_handle,
                     &toast_overlay,
                     Event::DeepLinkOpened { uri },
                 );
@@ -204,14 +206,14 @@ fn build_ui(app: &adw::Application) {
 
     // Auto-lock: navigate to lock screen when window loses focus (C1 App Security)
     {
-        let app_engine = app_engine.clone();
+        let engine_handle = engine_handle.clone();
         let content = content.clone();
         let toast_overlay = toast_overlay.clone();
         window.connect_notify_local(Some("is-active"), move |w, _| {
             if !w.is_active() {
                 dispatch_platform_event(
                     &content,
-                    &app_engine,
+                    &engine_handle,
                     &toast_overlay,
                     Event::AppBackgrounded,
                 );
@@ -222,14 +224,14 @@ fn build_ui(app: &adw::Application) {
     crate::core_ui::contextual_surface::install_environment_reporting(
         &window,
         &content,
-        &app_engine,
+        &engine_handle,
         &toast_overlay,
     );
 
     // Native keys activate only shortcuts declared by Core for this surface.
     let key_ctrl = gtk4::EventControllerKey::new();
     {
-        let app_engine = app_engine.clone();
+        let engine_handle = engine_handle.clone();
         let content = content.clone();
         let toast_overlay = toast_overlay.clone();
         key_ctrl.connect_key_pressed(move |_, key, _, modifier| {
@@ -237,7 +239,7 @@ fn build_ui(app: &adw::Application) {
                 && !modifier.contains(gtk4::gdk::ModifierType::ALT_MASK)
                 && crate::core_ui::contextual_surface::request_back(
                     &content,
-                    &app_engine,
+                    &engine_handle,
                     &toast_overlay,
                 )
             {
@@ -255,7 +257,7 @@ fn build_ui(app: &adw::Application) {
             if let Some(shortcut) = shortcut
                 && crate::core_ui::contextual_surface::dispatch_shortcut(
                     &content,
-                    &app_engine,
+                    &engine_handle,
                     &toast_overlay,
                     shortcut,
                 )
@@ -278,7 +280,7 @@ fn register_event_handler(
 ) {
     let rx = app_engine.borrow().subscribe_presentation_invalidations();
 
-    let app_engine = app_engine.clone();
+    let app_engine: EngineHandle = app_engine.clone();
     let content = content.clone();
     let toast_overlay = toast_overlay.clone();
     let repaint = move || {
@@ -298,7 +300,7 @@ fn register_event_handler(
 
 /// The fallback heartbeat covers native timer loss (ADR-044 Am2a).
 fn register_wakeup_poll(
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     content: &GtkBox,
     toast_overlay: &adw::ToastOverlay,
 ) {
@@ -312,11 +314,7 @@ fn register_wakeup_poll(
     });
 }
 
-fn fire_wakeup(
-    app_engine: &Rc<RefCell<AppEngine>>,
-    content: &GtkBox,
-    toast_overlay: &adw::ToastOverlay,
-) {
+fn fire_wakeup(app_engine: &EngineHandle, content: &GtkBox, toast_overlay: &adw::ToastOverlay) {
     dispatch_platform_event(content, app_engine, toast_overlay, Event::WakeupFired);
 }
 
@@ -334,7 +332,7 @@ thread_local! {
 /// path a live QR exchange's sub-second `ScheduleWakeup` needs to advance
 /// on time (#450).
 pub(crate) fn arm_wakeup(
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     content: &GtkBox,
     toast_overlay: &adw::ToastOverlay,
     delay_millis: u64,

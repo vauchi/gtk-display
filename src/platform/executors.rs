@@ -5,17 +5,16 @@
 //! and the pump that hands their events to Core on the main loop. The
 //! wiring moves to `linux-app` with ADR-078 step 3; BLE keeps its own host
 //! in `ble.rs` for now.
-use std::cell::RefCell;
 use std::num::NonZeroUsize;
-use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard, OnceLock, PoisonError};
 
 use gtk4::glib;
 use libadwaita as adw;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::Event;
 use vauchi_core::platform::executor::InboxLimits;
+
+use crate::core_ui::engine_link::EngineHandle;
 
 use crate::core_ui::contextual_surface::dispatch_platform_event;
 
@@ -50,7 +49,7 @@ pub fn lock<T>(slot: &'static Mutex<Option<T>>) -> MutexGuard<'static, Option<T>
 /// reports the session gone (`None` from `alive`) or `until` says so.
 pub fn pump(
     container: &gtk4::Box,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     mut pop: impl FnMut() -> Option<Event> + 'static,
     mut alive: impl FnMut() -> bool + 'static,

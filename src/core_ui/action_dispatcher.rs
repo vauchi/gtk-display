@@ -11,15 +11,13 @@ mod file_picker;
 use gtk4::Box as GtkBox;
 use libadwaita as adw;
 use libadwaita::prelude::*;
-use std::cell::RefCell;
 use std::collections::HashSet;
-use std::rc::Rc;
 
 use vauchi_app::i18n::{self, Locale};
 use vauchi_app::theme::DesignTokens;
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{Command, Event};
 
+use crate::core_ui::engine_link::EngineHandle;
 use crate::platform::hardware;
 
 use super::contextual_surface::dispatch_platform_event;
@@ -30,7 +28,7 @@ use super::contextual_surface::dispatch_platform_event;
 /// We deduplicate "unavailable" toasts per transport to avoid spamming the user.
 pub(crate) fn handle_exchange_commands(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     commands: &[Command],
 ) {
@@ -409,7 +407,7 @@ fn post_notification(container: &GtkBox, notification: &vauchi_core::Notificatio
 /// toast to the user.
 fn report_hardware_unavailable(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     transport: &str,
 ) {
@@ -426,7 +424,7 @@ fn report_hardware_unavailable(
 
 fn dispatch_unavailable(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     transport: &str,
 ) {
@@ -447,7 +445,7 @@ fn dispatch_unavailable(
 /// to the engine as `Event`.
 fn execute_direct_send(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     payload: Vec<u8>,
     is_initiator: bool,
@@ -498,7 +496,7 @@ fn execute_direct_send(
 /// Try camera-based QR scanning if available, otherwise fall back to paste dialog.
 fn scan_or_paste_qr(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     #[cfg(all(feature = "camera", target_os = "linux"))]
@@ -519,10 +517,10 @@ fn scan_or_paste_qr(
 /// 2. Copy the QR data string
 /// 3. Paste it into this dialog
 ///
-/// On confirm, the data is forwarded to AppEngine as a `QrScanned` hardware event.
+/// On confirm, the data reaches the engine link as a `QrScanned` hardware event.
 fn show_qr_paste_dialog(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     let window = match container

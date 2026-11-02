@@ -1,19 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use crate::core_ui::engine_link::EngineHandle;
+
 use gtk4::Box as GtkBox;
 use gtk4::prelude::*;
 use libadwaita as adw;
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::rc::Rc;
 
-use vauchi_app::ui::AppEngine;
 use vauchi_core::{ColorScheme, Command, Event, InputMode, MotionPreference, WindowClass};
 
 pub(crate) fn install_environment_reporting(
     window: &adw::ApplicationWindow,
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
     // Core answers a light/dark switch under "follow system" with the
@@ -44,7 +45,7 @@ pub(crate) fn install_environment_reporting(
 /// shows the sidebar — reporting it would flip Core back to Compact, which
 /// collapses the sidebar and widens the container again, on every
 /// interaction.
-pub(super) fn report_environment(container: &GtkBox, app_engine: &Rc<RefCell<AppEngine>>) {
+pub(super) fn report_environment(container: &GtkBox, app_engine: &EngineHandle) {
     let (width, height) = container.root().map_or_else(
         || (container.width(), container.height()),
         |root| (root.width(), root.height()),
@@ -54,7 +55,7 @@ pub(super) fn report_environment(container: &GtkBox, app_engine: &Rc<RefCell<App
 
 fn report_environment_with_size(
     container: &GtkBox,
-    app_engine: &Rc<RefCell<AppEngine>>,
+    app_engine: &EngineHandle,
     width: i32,
     height: i32,
 ) {
@@ -71,7 +72,7 @@ fn report_environment_with_size(
         motion,
         adw::StyleManager::default().is_dark(),
     );
-    for command in super::commands_for_event(app_engine, event) {
+    for command in super::commands_for_event(app_engine.as_ref(), event) {
         match command {
             Command::SetPresentationProfile { profile } => {
                 apply_window_class(container, profile.window_class);

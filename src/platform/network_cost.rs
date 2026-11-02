@@ -6,12 +6,10 @@
 //! content updates back on a metered one (vauchi/private#733 D6). Core
 //! decides; the shell only observes.
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use crate::core_ui::engine_link::EngineHandle;
 
 use gtk4::gio;
 use gtk4::prelude::*;
-use vauchi_app::ui::AppEngine;
 use vauchi_core::Event;
 use vauchi_core::settings::NetworkCost;
 
@@ -31,7 +29,7 @@ pub fn network_cost(monitor_type: &str, available: bool, metered: bool) -> Netwo
 }
 
 /// Reports the cost now and again whenever the network changes.
-pub fn watch(app_engine: &Rc<RefCell<AppEngine>>) {
+pub fn watch(app_engine: &EngineHandle) {
     let monitor = gio::NetworkMonitor::default();
     report(app_engine, &monitor);
     let engine = app_engine.clone();
@@ -40,14 +38,12 @@ pub fn watch(app_engine: &Rc<RefCell<AppEngine>>) {
     monitor.connect_network_metered_notify(move |monitor| report(&engine, monitor));
 }
 
-fn report(app_engine: &Rc<RefCell<AppEngine>>, monitor: &gio::NetworkMonitor) {
+fn report(app_engine: &EngineHandle, monitor: &gio::NetworkMonitor) {
     let cost = network_cost(
         monitor.type_().name(),
         monitor.is_network_available(),
         monitor.is_network_metered(),
     );
     // A platform fact: Core answers with no commands.
-    let _ = app_engine
-        .borrow_mut()
-        .dispatch(Event::NetworkCostChanged { cost });
+    let _ = app_engine.dispatch(Event::NetworkCostChanged { cost });
 }

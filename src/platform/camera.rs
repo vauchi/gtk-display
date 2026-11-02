@@ -7,8 +7,7 @@
 //! until then Linux scans blind, as the paste fallback already does.
 #[cfg(all(feature = "camera", target_os = "linux"))]
 mod inner {
-    use std::cell::{Cell, RefCell};
-    use std::rc::Rc;
+    use std::cell::Cell;
     use std::sync::{Arc, Mutex};
 
     use gtk4::prelude::*;
@@ -16,9 +15,10 @@ mod inner {
     use libadwaita::prelude::*;
 
     use vauchi_app::i18n;
-    use vauchi_app::ui::AppEngine;
     use vauchi_core::{CameraPurpose, Event};
     use vauchi_hardware::{CameraSession, NokhwaCamera};
+
+    use crate::core_ui::engine_link::EngineHandle;
 
     use crate::locale::detect_locale;
     use crate::platform::executors::{INBOX_LIMITS, lock, pump, runtime};
@@ -59,7 +59,7 @@ mod inner {
     /// receives it as `QrScanned`.
     pub fn scan_qr(
         container: &gtk4::Box,
-        app_engine: &Rc<RefCell<AppEngine>>,
+        app_engine: &EngineHandle,
         toast_overlay: &adw::ToastOverlay,
     ) {
         let Some(window) = container
