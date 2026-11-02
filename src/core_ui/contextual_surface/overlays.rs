@@ -44,7 +44,6 @@ pub(super) fn present(
         OverlayKind::Information => {
             present_information(container, app_engine, toast_overlay, surface_id, overlay)
         }
-        _ => {}
     }
 }
 
@@ -364,7 +363,6 @@ fn animation_duration(full_duration_ms: u32) -> u32 {
     match motion {
         MotionPreference::Full => full_duration_ms,
         MotionPreference::Reduced => 0,
-        _ => 0,
     }
 }
 

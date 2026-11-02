@@ -30,7 +30,6 @@ pub fn post_notification(
         NotificationUrgency::Default => gio::NotificationPriority::Normal,
         NotificationUrgency::High => gio::NotificationPriority::High,
         NotificationUrgency::Urgent => gio::NotificationPriority::Urgent,
-        _ => gio::NotificationPriority::Normal,
     });
     if let Some(uri) = &notification.deep_link_uri {
         native

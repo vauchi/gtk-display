@@ -117,7 +117,6 @@ pub(super) fn render_node(
         | PresentationNode::Status { .. }
         | PresentationNode::Qr { .. }
         | PresentationNode::Divider => collections::render(node, surface_id, on_event, tokens),
-        _ => Label::new(None).upcast(),
     }
 }
 

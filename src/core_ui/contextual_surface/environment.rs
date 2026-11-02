@@ -114,7 +114,6 @@ pub(super) fn apply_window_class(container: &GtkBox, class: WindowClass) {
         WindowClass::Compact => container.add_css_class("presentation-compact"),
         WindowClass::Medium => container.add_css_class("presentation-medium"),
         WindowClass::Expanded => container.add_css_class("presentation-expanded"),
-        _ => {}
     }
     // D4: the persistent sidebar collapses under Core's own Compact
     // decision rather than a shell-computed width threshold (VRS02 — the

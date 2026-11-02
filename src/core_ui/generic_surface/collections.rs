@@ -241,7 +241,6 @@ pub(super) fn render(
                 match axis {
                     vauchi_core::PresentationAxis::Horizontal => Orientation::Horizontal,
                     vauchi_core::PresentationAxis::Vertical => Orientation::Vertical,
-                    _ => Orientation::Vertical,
                 },
                 8,
             );
@@ -390,7 +389,6 @@ pub(super) fn render(
                 PresentationQrPurpose::Capture => {
                     group.append(&render_qr_capture(id, surface_id, on_event));
                 }
-                _ => {}
             }
             if let Some(label) = label {
                 group.append(&Label::new(Some(label)));

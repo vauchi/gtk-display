@@ -256,7 +256,7 @@ impl GtkPresentationState {
                 .filter(|surface_id| self.surfaces.contains_key(*surface_id))
                 .cloned()
                 .collect(),
-            PaneLayout::Single | _ => {
+            PaneLayout::Single => {
                 let surface_id = if self.surfaces.contains_key(&profile.active_surface) {
                     &profile.active_surface
                 } else {
