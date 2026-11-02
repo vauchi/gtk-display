@@ -1172,7 +1172,7 @@ version = "0.17.14"
 criteria = "safe-to-deploy"
 
 [[exemptions.rqrr]]
-version = "0.11.0@git:fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
+version = "0.11.0@git:7e9610dde58df0ed058375aa1fe6af41424d7012"
 criteria = "safe-to-deploy"
 
 [[exemptions.rusqlite]]

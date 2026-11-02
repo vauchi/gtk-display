@@ -2902,7 +2902,7 @@ dependencies = [
 [[package]]
 name = "rqrr"
 version = "0.11.0"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
+source = "git+https://gitlab.com/vauchi/utils/rqrr.git?tag=v0.11.0%2Bvauchi.1#7e9610dde58df0ed058375aa1fe6af41424d7012"
 dependencies = [
  "g2p",
  "image",
