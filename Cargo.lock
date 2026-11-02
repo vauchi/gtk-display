@@ -3838,7 +3838,6 @@ dependencies = [
  "argon2",
  "base64",
  "chacha20poly1305",
- "cpal",
  "crc32fast",
  "ed25519-dalek",
  "flate2",
@@ -3884,8 +3883,6 @@ dependencies = [
  "gtk4",
  "libadwaita",
  "mdns-sd",
- "nokhwa",
- "pcsc",
  "qrcode",
  "serde_json",
  "tempfile",
@@ -3898,10 +3895,17 @@ dependencies = [
 
 [[package]]
 name = "vauchi-linux-hw"
-version = "0.95.0"
-source = "git+https://gitlab.com/vauchi/linux-hw.git?tag=v0.95.0#07935afc8df90326a3fae215029902e9b02851af"
+version = "0.96.0"
+source = "git+https://gitlab.com/vauchi/linux-hw.git?tag=v0.96.0#429d3d528943ea578ba58d8bab1a6cfd5a884228"
 dependencies = [
+ "cpal",
  "futures-util",
+ "image",
+ "nokhwa",
+ "pcsc",
+ "rqrr",
+ "rxing",
+ "serde",
  "thiserror 2.0.18",
  "tokio",
  "uuid",

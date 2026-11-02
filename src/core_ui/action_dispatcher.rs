@@ -57,6 +57,8 @@ pub(crate) fn handle_exchange_commands(
                     #[cfg(feature = "audio")]
                     {
                         crate::platform::audio::emit_challenge(
+                            container,
+                            app_engine,
                             toast_overlay,
                             samples.clone(),
                             *sample_rate,

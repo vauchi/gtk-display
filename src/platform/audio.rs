@@ -1,137 +1,100 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
-
-//! Ultrasonic audio exchange handler.
-//!
-//! Wraps vauchi-core's `CpalAudioBackend` and runs audio operations on a
-//! background thread to avoid blocking the GTK main loop.
-
+//! Audio proximity through the hardware shell's `AudioSession` (ADR-077):
+//! `AudioEmitChallenge` plays Core's pre-encoded samples,
+//! `AudioListenForResponse` records and reports `AudioSamplesRecorded`,
+//! `AudioStop` ends both. The modulation lives in Core; a failure reaches
+//! it as `HardwareError` on "Audio", and the shell shows nothing of its own.
 #[cfg(feature = "audio")]
 mod inner {
-    use std::cell::RefCell;
+    use std::cell::{Cell, RefCell};
     use std::rc::Rc;
-    use std::sync::mpsc;
-    use std::time::Duration;
+    use std::sync::{Arc, Mutex};
 
-    use gtk4::glib;
     use libadwaita as adw;
 
-    use vauchi_app::i18n::{self, Locale};
     use vauchi_app::ui::AppEngine;
     use vauchi_core::Event;
-    use vauchi_core::exchange::CpalAudioBackend;
+    use vauchi_hardware::{AudioSession, CpalAudio};
 
-    use crate::core_ui::contextual_surface::dispatch_platform_event;
+    use crate::platform::executors::{INBOX_LIMITS, lock, pump, runtime};
 
-    /// Play already-encoded ultrasonic samples on a background thread.
-    ///
-    /// Core supplies pre-encoded PCM (FSK modulation lives in
-    /// `audio_modem`); this function is a pure hardware adapter.
-    pub fn emit_challenge(toast_overlay: &adw::ToastOverlay, samples: Vec<f32>, sample_rate: u32) {
-        let toast_overlay = toast_overlay.clone();
-        let (tx, rx) = mpsc::channel::<Result<(), String>>();
+    static SESSION: Mutex<Option<AudioSession>> = Mutex::new(None);
 
-        std::thread::spawn(move || {
-            let result = CpalAudioBackend::new()
-                .map_err(|e| e.to_string())
-                .and_then(|backend| {
-                    backend
-                        .emit_samples(&samples, sample_rate)
-                        .map_err(|e| e.to_string())
-                });
-            tx.send(result).ok();
-        });
+    thread_local! {
+        static GENERATION: Cell<u64> = const { Cell::new(0) };
+        static PUMPING: Cell<bool> = const { Cell::new(false) };
+    }
 
-        // Poll the channel from the main loop
-        glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
-            match rx.try_recv() {
-                Ok(Ok(())) => {
-                    let msg =
-                        i18n::get_string(Locale::default(), "platform.audio_challenge_emitted");
-                    let toast = adw::Toast::new(&msg);
-                    toast_overlay.add_toast(toast);
-                    glib::ControlFlow::Break
-                }
-                Ok(Err(e)) => {
-                    let msg = i18n::get_string_with_args(
-                        Locale::default(),
-                        "platform.audio_emit_failed",
-                        &[("error", &e)],
-                    );
-                    let toast = adw::Toast::new(&msg);
-                    toast_overlay.add_toast(toast);
-                    glib::ControlFlow::Break
-                }
-                Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
-                Err(mpsc::TryRecvError::Disconnected) => glib::ControlFlow::Break,
+    fn session() -> std::sync::MutexGuard<'static, Option<AudioSession>> {
+        let mut slot = lock(&SESSION);
+        if slot.is_none() {
+            *slot = AudioSession::with_backend(
+                Arc::new(CpalAudio),
+                runtime().handle().clone(),
+                INBOX_LIMITS,
+            )
+            .ok();
+        }
+        slot
+    }
+
+    fn pop() -> Option<Event> {
+        lock(&SESSION).as_mut().and_then(AudioSession::pop)
+    }
+
+    fn ensure_pump(
+        container: &gtk4::Box,
+        app_engine: &Rc<RefCell<AppEngine>>,
+        toast_overlay: &adw::ToastOverlay,
+    ) {
+        if PUMPING.with(Cell::get) {
+            return;
+        }
+        PUMPING.with(|p| p.set(true));
+        let generation = GENERATION.with(Cell::get);
+        pump(container, app_engine, toast_overlay, pop, move || {
+            let alive = GENERATION.with(|g| g.get() == generation);
+            if !alive {
+                PUMPING.with(|p| p.set(false));
             }
+            alive
         });
     }
 
-    /// Listen for an ultrasonic response on a background thread.
+    /// `AudioEmitChallenge`: play Core's pre-encoded samples.
+    pub fn emit_challenge(
+        container: &gtk4::Box,
+        app_engine: &Rc<RefCell<AppEngine>>,
+        toast_overlay: &adw::ToastOverlay,
+        samples: Vec<f32>,
+        sample_rate: u32,
+    ) {
+        if let Some(session) = session().as_mut() {
+            let _ = session.emit_challenge(samples, sample_rate);
+        }
+        ensure_pump(container, app_engine, toast_overlay);
+    }
+
+    /// `AudioListenForResponse`: record for `timeout_ms`, then report.
     pub fn listen_for_response(
         container: &gtk4::Box,
         app_engine: &Rc<RefCell<AppEngine>>,
         toast_overlay: &adw::ToastOverlay,
         timeout_ms: u64,
     ) {
-        let container = container.clone();
-        let app_engine = app_engine.clone();
-        let toast_overlay = toast_overlay.clone();
-        let (tx, rx) = mpsc::channel::<Result<(Vec<f32>, u32), String>>();
-
-        std::thread::spawn(move || {
-            let result = CpalAudioBackend::new()
-                .map_err(|e| e.to_string())
-                .and_then(|backend| {
-                    let timeout = Duration::from_millis(timeout_ms);
-                    backend.record_samples(timeout).map_err(|e| e.to_string())
-                });
-            tx.send(result).ok();
-        });
-
-        glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
-            match rx.try_recv() {
-                Ok(Ok((samples, sample_rate))) => {
-                    dispatch_platform_event(
-                        &container,
-                        &app_engine,
-                        &toast_overlay,
-                        Event::AudioSamplesRecorded {
-                            samples,
-                            sample_rate,
-                        },
-                    );
-                    glib::ControlFlow::Break
-                }
-                Ok(Err(e)) => {
-                    dispatch_platform_event(
-                        &container,
-                        &app_engine,
-                        &toast_overlay,
-                        Event::HardwareError {
-                            transport: "Audio".into(),
-                            error: e.clone(),
-                        },
-                    );
-                    let msg = i18n::get_string_with_args(
-                        Locale::default(),
-                        "platform.audio_listen_failed",
-                        &[("error", &e)],
-                    );
-                    let toast = adw::Toast::new(&msg);
-                    toast_overlay.add_toast(toast);
-                    glib::ControlFlow::Break
-                }
-                Err(mpsc::TryRecvError::Empty) => glib::ControlFlow::Continue,
-                Err(mpsc::TryRecvError::Disconnected) => glib::ControlFlow::Break,
-            }
-        });
+        if let Some(session) = session().as_mut() {
+            let _ = session.listen_for_response(timeout_ms);
+        }
+        ensure_pump(container, app_engine, toast_overlay);
     }
 
-    /// Stop any active audio streams.
+    /// `AudioStop`: end both, reporting nothing.
     pub fn stop() {
-        // CpalAudioBackend is created per-operation, so stop is a no-op.
+        GENERATION.with(|g| g.set(g.get().wrapping_add(1)));
+        if let Some(session) = lock(&SESSION).as_mut() {
+            session.stop();
+        }
     }
 }
 
