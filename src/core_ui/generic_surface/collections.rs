@@ -4,7 +4,6 @@
 use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Button, DrawingArea, Entry, Label, Orientation, Widget};
 use libadwaita as adw;
-use vauchi_app::i18n::{self, Locale};
 use vauchi_core::{
     ActionSpec, BindingId, InputValue, PresentationImageShape, PresentationNode,
     PresentationQrErrorCorrection, PresentationQrPurpose, PresentationRow, PresentationTokens,
@@ -13,6 +12,7 @@ use vauchi_core::{
 
 use super::{OnEvent, action_button, emit_value, render_node, targets};
 use crate::core_ui::accessibility::apply as apply_accessibility;
+use crate::core_ui::engine_link::EngineHandle;
 use crate::core_ui::navigation_icons::content_pictogram_name;
 
 /// What an `Image` node resolves to, decided before any widget exists so the
@@ -227,6 +227,7 @@ pub(super) fn render(
     node: &PresentationNode,
     surface_id: &SurfaceId,
     on_event: &OnEvent,
+    link: &EngineHandle,
     tokens: &PresentationTokens,
 ) -> Widget {
     match node {
@@ -254,7 +255,7 @@ pub(super) fn render(
                 );
             }
             for child in children {
-                group.append(&render_node(child, surface_id, on_event, tokens));
+                group.append(&render_node(child, surface_id, on_event, link, tokens));
             }
             apply_accessibility(&group, accessibility);
             group.upcast()
@@ -280,12 +281,12 @@ pub(super) fn render(
             if *searchable {
                 group.append(
                     &gtk4::SearchEntry::builder()
-                        .placeholder_text(i18n::get_string(Locale::default(), "action.search"))
+                        .placeholder_text(link.string("action.search"))
                         .build(),
                 );
             }
             for row in rows {
-                group.append(&render_row(row, surface_id, on_event, tokens));
+                group.append(&render_row(row, surface_id, on_event, link, tokens));
             }
             group.upcast()
         }
@@ -387,7 +388,7 @@ pub(super) fn render(
                     }
                 }
                 PresentationQrPurpose::Capture => {
-                    group.append(&render_qr_capture(id, surface_id, on_event));
+                    group.append(&render_qr_capture(id, surface_id, on_event, link));
                 }
             }
             if let Some(label) = label {
@@ -452,17 +453,19 @@ fn render_qr(
     drawing
 }
 
-fn render_qr_capture(id: &BindingId, surface_id: &SurfaceId, on_event: &OnEvent) -> GtkBox {
+fn render_qr_capture(
+    id: &BindingId,
+    surface_id: &SurfaceId,
+    on_event: &OnEvent,
+    link: &EngineHandle,
+) -> GtkBox {
     let row = GtkBox::new(Orientation::Horizontal, 8);
     let entry = Entry::builder()
-        .placeholder_text(i18n::get_string(
-            Locale::default(),
-            "platform.qr_paste_placeholder",
-        ))
+        .placeholder_text(link.string("platform.qr_paste_placeholder"))
         .hexpand(true)
         .build();
     entry.set_widget_name(id.as_str());
-    let button = Button::with_label(&i18n::get_string(Locale::default(), "platform.qr_submit"));
+    let button = Button::with_label(&link.string("platform.qr_submit"));
     let entry_for_submit = entry.clone();
     let id = id.clone();
     let surface = surface_id.clone();
@@ -522,6 +525,7 @@ fn render_row(
     row: &PresentationRow,
     surface_id: &SurfaceId,
     on_event: &OnEvent,
+    link: &EngineHandle,
     tokens: &PresentationTokens,
 ) -> Widget {
     let content = GtkBox::new(Orientation::Vertical, 2);
@@ -550,7 +554,7 @@ fn render_row(
         );
     }
     for control in &row.controls {
-        content.append(&render_node(control, surface_id, on_event, tokens));
+        content.append(&render_node(control, surface_id, on_event, link, tokens));
     }
     // Avatar and text form one accessible unit: the row's name has to cover
     // what a reader will land on, not just the text beside the picture.

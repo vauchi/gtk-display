@@ -174,12 +174,12 @@ fn render_presentation(
             let pane = GtkBox::new(Orientation::Vertical, 0);
             pane.set_hexpand(true);
             pane.set_vexpand(true);
-            generic_surface::render(&pane, surface, &on_event);
+            generic_surface::render(&pane, surface, &on_event, app_engine);
             panes.append(&pane);
         }
         container.append(&panes);
     } else if let Some(surface) = surfaces.first() {
-        generic_surface::render(container, surface, &on_event);
+        generic_surface::render(container, surface, &on_event, app_engine);
     }
     if let Some((surface_id, bar)) = &context_bar {
         let navigation_shown = navigation

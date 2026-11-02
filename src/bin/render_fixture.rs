@@ -29,6 +29,25 @@ use vauchi_core::SurfaceSpec;
 use vauchi_gtk::capture::{FRAMES_BEFORE_CAPTURE, MAX_FRAMES_BEFORE_CAPTURE, widget_to_png};
 use vauchi_gtk::core_ui::generic_surface::{OnEvent, render};
 
+/// The fixture harness has no engine: strings come from the locale store
+/// at the detected locale, as the app's link would answer.
+struct FixtureLink;
+
+impl vauchi_gtk::core_ui::engine_link::EngineLink for FixtureLink {
+    fn dispatch(&self, _: vauchi_core::Event) -> Vec<vauchi_core::Command> {
+        Vec::new()
+    }
+    fn initial_commands(&self) -> Vec<vauchi_core::Command> {
+        Vec::new()
+    }
+    fn string(&self, key: &str) -> String {
+        vauchi_app::i18n::get_string(vauchi_gtk::locale::detect_locale(), key)
+    }
+    fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String {
+        vauchi_app::i18n::get_string_with_args(vauchi_gtk::locale::detect_locale(), key, args)
+    }
+}
+
 fn main() {
     let mut args = std::env::args().skip(1);
     let fixture_path = args.next().unwrap_or_else(|| usage());
@@ -59,7 +78,8 @@ fn main() {
 
         let container = GtkBox::new(Orientation::Vertical, 0);
         let on_event: OnEvent = Rc::new(|_event| {});
-        render(&container, &surface, &on_event);
+        let link: vauchi_gtk::core_ui::engine_link::EngineHandle = Rc::new(FixtureLink);
+        render(&container, &surface, &on_event, &link);
         window.set_content(Some(&container));
         window.present();
 

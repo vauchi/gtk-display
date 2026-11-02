@@ -7,6 +7,7 @@ mod collections;
 mod controls;
 mod targets;
 
+use crate::core_ui::engine_link::EngineHandle;
 use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Label, Orientation, Widget};
 use std::rc::Rc;
@@ -25,7 +26,7 @@ use super::accessibility;
 /// that reason (`contextual_surface::widgets::dispatch_event`).
 pub type OnEvent = Rc<dyn Fn(Event)>;
 
-pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent) {
+pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent, link: &EngineHandle) {
     while let Some(child) = container.first_child() {
         container.remove(&child);
     }
@@ -75,6 +76,7 @@ pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent) {
             node,
             &surface.surface_id,
             on_event,
+            link,
             &surface.tokens,
         ));
     }
@@ -101,6 +103,7 @@ pub(super) fn render_node(
     node: &PresentationNode,
     surface_id: &SurfaceId,
     on_event: &OnEvent,
+    link: &EngineHandle,
     tokens: &PresentationTokens,
 ) -> Widget {
     match node {
@@ -116,7 +119,9 @@ pub(super) fn render_node(
         | PresentationNode::Image { .. }
         | PresentationNode::Status { .. }
         | PresentationNode::Qr { .. }
-        | PresentationNode::Divider => collections::render(node, surface_id, on_event, tokens),
+        | PresentationNode::Divider => {
+            collections::render(node, surface_id, on_event, link, tokens)
+        }
     }
 }
 

@@ -13,7 +13,6 @@ use libadwaita as adw;
 use libadwaita::prelude::*;
 use std::collections::HashSet;
 
-use vauchi_app::i18n::{self, Locale};
 use vauchi_app::theme::DesignTokens;
 use vauchi_core::{Command, Event};
 
@@ -66,10 +65,7 @@ pub(crate) fn handle_exchange_commands(
                     {
                         let _ = (samples, sample_rate);
                         if notified_unavailable.insert("audio") {
-                            let msg = i18n::get_string(
-                                Locale::default(),
-                                "platform.audio_built_without_feature",
-                            );
+                            let msg = app_engine.string("platform.audio_built_without_feature");
                             let toast = adw::Toast::new(&msg);
                             toast_overlay.add_toast(toast);
                         }
@@ -93,10 +89,7 @@ pub(crate) fn handle_exchange_commands(
                     {
                         let _ = timeout_ms;
                         if notified_unavailable.insert("audio") {
-                            let msg = i18n::get_string(
-                                Locale::default(),
-                                "platform.audio_built_without_feature",
-                            );
+                            let msg = app_engine.string("platform.audio_built_without_feature");
                             let toast = adw::Toast::new(&msg);
                             toast_overlay.add_toast(toast);
                         }
@@ -126,10 +119,7 @@ pub(crate) fn handle_exchange_commands(
                     {
                         let _ = service_uuid;
                         if notified_unavailable.insert("ble") {
-                            let msg = i18n::get_string(
-                                Locale::default(),
-                                "platform.ble_built_without_feature",
-                            );
+                            let msg = app_engine.string("platform.ble_built_without_feature");
                             let toast = adw::Toast::new(&msg);
                             toast_overlay.add_toast(toast);
                         }
@@ -247,10 +237,7 @@ pub(crate) fn handle_exchange_commands(
                     {
                         let _ = apdus;
                         if notified_unavailable.insert("nfc") {
-                            let msg = i18n::get_string(
-                                Locale::default(),
-                                "platform.nfc_built_without_feature",
-                            );
+                            let msg = app_engine.string("platform.nfc_built_without_feature");
                             let toast = adw::Toast::new(&msg);
                             toast_overlay.add_toast(toast);
                         }
@@ -411,8 +398,7 @@ fn report_hardware_unavailable(
     toast_overlay: &adw::ToastOverlay,
     transport: &str,
 ) {
-    let msg = i18n::get_string_with_args(
-        Locale::default(),
+    let msg = app_engine.string_with_args(
         "platform.hardware_not_available",
         &[("transport", transport)],
     );
@@ -531,18 +517,17 @@ fn show_qr_paste_dialog(
         None => return,
     };
 
-    let locale = Locale::default();
     let body = if hardware::has_camera() {
-        i18n::get_string(locale, "platform.qr_camera_not_available")
+        app_engine.string("platform.qr_camera_not_available")
     } else {
-        i18n::get_string(locale, "platform.qr_no_camera")
+        app_engine.string("platform.qr_no_camera")
     };
-    let title = i18n::get_string(locale, "platform.qr_paste_dialog_title");
+    let title = app_engine.string("platform.qr_paste_dialog_title");
 
     let dialog = adw::MessageDialog::new(Some(&window), Some(&title), Some(&body));
 
     // Text entry for pasting QR data
-    let placeholder = i18n::get_string(locale, "platform.qr_paste_placeholder");
+    let placeholder = app_engine.string("platform.qr_paste_placeholder");
     let tokens = DesignTokens::default();
     let entry = gtk4::Entry::builder()
         .placeholder_text(&placeholder)
@@ -552,8 +537,8 @@ fn show_qr_paste_dialog(
         .build();
     dialog.set_extra_child(Some(&entry));
 
-    let cancel_label = i18n::get_string(locale, "platform.button_cancel");
-    let confirm_label = i18n::get_string(locale, "platform.button_confirm");
+    let cancel_label = app_engine.string("platform.button_cancel");
+    let confirm_label = app_engine.string("platform.button_confirm");
     dialog.add_response("cancel", &cancel_label);
     dialog.add_response("confirm", &confirm_label);
     dialog.set_response_appearance("confirm", adw::ResponseAppearance::Suggested);
@@ -571,7 +556,7 @@ fn show_qr_paste_dialog(
             {
                 let data = entry.text().to_string();
                 if data.trim().is_empty() {
-                    let msg = i18n::get_string(Locale::default(), "platform.error_no_qr_data");
+                    let msg = app_engine.string("platform.error_no_qr_data");
                     let toast = adw::Toast::new(&msg);
                     toast_overlay.add_toast(toast);
                     return;
