@@ -893,7 +893,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1269,7 +1269,7 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2729,7 +2729,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.4.15",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2742,7 +2742,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3157,7 +3157,7 @@ dependencies = [
  "getrandom 0.4.2",
  "once_cell",
  "rustix 1.1.4",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3546,8 +3546,8 @@ dependencies = [
 
 [[package]]
 name = "vauchi-app"
-version = "0.96.1"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
+version = "0.97.0"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.97.0#966c24248cd966a200fe8551c9e1937aef13761d"
 dependencies = [
  "base64",
  "flate2",
@@ -3560,19 +3560,8 @@ dependencies = [
  "tokio",
  "tracing",
  "ureq",
- "vauchi-contract 0.95.1",
+ "vauchi-contract",
  "vauchi-core",
- "zeroize",
-]
-
-[[package]]
-name = "vauchi-contract"
-version = "0.95.1"
-source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.95.1#097757f7dcc0ee969bb3bdc57302614dc7248e1e"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror",
  "zeroize",
 ]
 
@@ -3589,8 +3578,8 @@ dependencies = [
 
 [[package]]
 name = "vauchi-core"
-version = "0.96.1"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
+version = "0.97.0"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.97.0#966c24248cd966a200fe8551c9e1937aef13761d"
 dependencies = [
  "argon2",
  "base64",
@@ -3624,7 +3613,7 @@ dependencies = [
  "ureq",
  "url",
  "uuid",
- "vauchi-contract 0.95.1",
+ "vauchi-contract",
  "vauchi-protocol",
  "webpki-roots",
  "x25519-dalek",
@@ -3666,14 +3655,14 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
- "vauchi-contract 0.96.2",
+ "vauchi-contract",
  "zbus",
 ]
 
 [[package]]
 name = "vauchi-protocol"
-version = "0.96.1"
-source = "git+https://gitlab.com/vauchi/core.git?tag=v0.96.1#fea897f8f1483aa857fcb9d2cd9ee91ba8db7e5d"
+version = "0.97.0"
+source = "git+https://gitlab.com/vauchi/core.git?tag=v0.97.0#966c24248cd966a200fe8551c9e1937aef13761d"
 dependencies = [
  "serde",
  "serde_json",
