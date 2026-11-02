@@ -427,6 +427,10 @@ security:audit:
 security:deny:
   extends: [.linux-runner-readonly, .security-deny-job]
 
+# cargo-vet: every dependency audited or an honest exemption (VSC01)
+security:vet:
+  extends: [.linux-runner-readonly, .security-vet-job]
+
 # Binary size tracking (main merges + release tags)
 perf:binary-size:
   extends: [.binary-size-tracking-job, .linux-runner, .timeout-cold-rebuild]
