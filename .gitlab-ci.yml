@@ -8,7 +8,7 @@
 
 include:
   - project: 'vauchi/scripts'
-    ref: 862ffb925603be537c836c963f88759cddd465a3
+    ref: ci-templates-v2026.11.02
     file:
       - '/ci-templates/rust-base.yml'
       - '/ci-templates/shell-command-conformance.yml'
@@ -31,7 +31,7 @@ include:
       - '/ci-templates/cross-cutting-lint.yml'
 
 variables:
-  VAUCHI_SCRIPTS_REF: "862ffb925603be537c836c963f88759cddd465a3"
+  VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.02"
   # cargo audit runs with --deny warnings; every entry here is an
   # advisory with no fix available to us, not one we chose to skip.
   # anyhow (RUSTSEC-2026-0190) and yanked spin were also flagged and are
@@ -470,7 +470,7 @@ check:parser-parity:
     FRONTEND_NAME: "linux-gtk"
     PARSER_FILE: "src/core_ui/generic_surface"
     PARSER_PROTOCOL: "presentation"
-    PARSER_SCRIPT_REF: "ci-templates-v2026.10.08"
+    PARSER_SCRIPT_REF: "ci-templates-v2026.11.02"
     # The Core this repository pins, not Core main: since the contract
     # move (core!2142) main no longer holds the presentation enum.
     CORE_PIN_FILE: "Cargo.toml"
