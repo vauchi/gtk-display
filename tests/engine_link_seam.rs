@@ -6,7 +6,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use vauchi_core::{Command, Event};
+use vauchi_core::{Command, Event, SurfaceId};
 use vauchi_gtk::core_ui::contextual_surface::commands_for_event;
 use vauchi_gtk::core_ui::engine_link::{EngineHandle, EngineLink};
 
@@ -37,14 +37,14 @@ fn a_shell_event_reaches_whatever_link_the_app_gave_and_its_answer_comes_back() 
     let commands = commands_for_event(
         handle.as_ref(),
         Event::SurfaceActivated {
-            surface_id: "contacts".into(),
+            surface_id: SurfaceId::new("contacts").expect("a valid surface id"),
         },
     );
     assert_eq!(commands, vec![Command::QrRequestScan]);
     assert_eq!(
         link.events.borrow().clone(),
         vec![Event::SurfaceActivated {
-            surface_id: "contacts".into()
+            surface_id: SurfaceId::new("contacts").expect("a valid surface id")
         }]
     );
 }
