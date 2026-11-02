@@ -35,7 +35,21 @@ thread_local! {
     static OPEN_DEEP_LINK: RefCell<Option<DeepLinkOpener>> = const { RefCell::new(None) };
 }
 
+/// gvauchi with linux-hw's `LinuxHardware`, as linux-app runs it.
 pub fn run() {
+    run_with(Box::new(start_linux_hardware));
+}
+
+thread_local! {
+    static START_HARDWARE: std::cell::RefCell<Option<crate::core_ui::hardware_link::StartHardware>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// The GTK app with the hardware the caller starts (ADR-078 step 3b): the
+/// app (linux-app) owns the hardware shell, this crate only renders and
+/// routes commands to it.
+pub fn run_with(start_hardware: crate::core_ui::hardware_link::StartHardware) {
+    START_HARDWARE.with(|slot| *slot.borrow_mut() = Some(start_hardware));
     if let Some(resource_dir) = std::env::var_os("VAUCHI_LOCALES_DIR") {
         let _ = i18n::init(std::path::Path::new(&resource_dir));
     }
@@ -67,7 +81,6 @@ pub fn run() {
         .build();
     app.connect_activate(build_ui);
     app.connect_open(open_deep_links);
-    #[cfg(all(feature = "ble", target_os = "linux"))]
     // Drop the hardware shell (its runtime, its BlueZ sessions) before the
     // process exits; a thread-local dropped after Tokio's own aborts.
     app.connect_shutdown(|_| crate::core_ui::hardware_link::uninstall());
@@ -360,38 +373,57 @@ pub(crate) fn arm_wakeup(
     });
 }
 
-/// Start linux-hw's hardware shell, report its capabilities to Core and
-/// route the hardware commands it ports to it (ADR-078 step 3a). Without
-/// any hardware feature, or when the shell cannot start, the renderer keeps
-/// every command and Core learns of no capability.
-#[cfg(any(
-    feature = "ble",
-    feature = "nfc",
-    feature = "audio",
-    feature = "camera"
-))]
+/// Start the hardware the app chose (`run_with`), report its capabilities
+/// to Core once and route the hardware commands it ports to it.
 fn install_hardware(engine: &EngineHandle, content: &GtkBox, toast_overlay: &adw::ToastOverlay) {
-    let hardware = match vauchi_hardware::LinuxHardware::start() {
-        Ok(hardware) => hardware,
-        Err(error) => {
-            eprintln!("[hardware] linux-hw did not start: {error}");
-            return;
-        }
+    let Some(start) = START_HARDWARE.with(|slot| slot.borrow_mut().take()) else {
+        return;
     };
-    let link = platform::linux_hardware_link::LinuxHardwareLink::new(hardware);
-    crate::core_ui::contextual_surface::dispatch_platform_event(
-        content,
-        engine,
-        toast_overlay,
-        link.report(),
-    );
-    crate::core_ui::hardware_link::install(Rc::new(link), content, engine, toast_overlay);
+    let Some(started) = start() else {
+        return;
+    };
+    if let Some(capabilities) = started.capabilities {
+        crate::core_ui::contextual_surface::dispatch_platform_event(
+            content,
+            engine,
+            toast_overlay,
+            capabilities,
+        );
+    }
+    crate::core_ui::hardware_link::install(started.link, content, engine, toast_overlay);
 }
 
-#[cfg(not(any(
-    feature = "ble",
-    feature = "nfc",
-    feature = "audio",
-    feature = "camera"
-)))]
-fn install_hardware(_: &EngineHandle, _: &GtkBox, _: &adw::ToastOverlay) {}
+/// linux-hw's hardware shell; without any hardware feature, or when the
+/// shell cannot start, there is none and every command stays here.
+pub fn start_linux_hardware() -> Option<crate::core_ui::hardware_link::StartedHardware> {
+    #[cfg(any(
+        feature = "ble",
+        feature = "nfc",
+        feature = "audio",
+        feature = "camera"
+    ))]
+    {
+        let hardware = match vauchi_hardware::LinuxHardware::start() {
+            Ok(hardware) => hardware,
+            Err(error) => {
+                eprintln!("[hardware] linux-hw did not start: {error}");
+                return None;
+            }
+        };
+        let link = platform::linux_hardware_link::LinuxHardwareLink::new(hardware);
+        let capabilities = Some(link.report());
+        Some(crate::core_ui::hardware_link::StartedHardware {
+            link: Rc::new(link),
+            capabilities,
+        })
+    }
+    #[cfg(not(any(
+        feature = "ble",
+        feature = "nfc",
+        feature = "audio",
+        feature = "camera"
+    )))]
+    {
+        None
+    }
+}

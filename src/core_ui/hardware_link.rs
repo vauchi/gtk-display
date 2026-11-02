@@ -15,6 +15,16 @@ use vauchi_core::{Command, CommandTarget, Event};
 
 use crate::core_ui::engine_link::EngineHandle;
 
+/// Starts the app's hardware shell on the main thread, once the UI exists:
+/// the link and the capabilities report Core gets first, or `None` when
+/// there is no hardware to drive (every command then stays here).
+pub type StartHardware = Box<dyn FnOnce() -> Option<StartedHardware>>;
+
+pub struct StartedHardware {
+    pub link: Rc<dyn HardwareLink>,
+    pub capabilities: Option<Event>,
+}
+
 pub trait HardwareLink {
     /// Run the command on a hardware port; `false` when no port takes it.
     fn execute(&self, command: &Command) -> bool;
