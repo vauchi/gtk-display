@@ -49,7 +49,10 @@ pub(crate) fn handle_commands(
             continue;
         }
         match command {
-            Command::ReplaceSurface { .. } => presentation_changed = true,
+            Command::ReplaceSurface { surface } => {
+                set_content_margin(container, i32::from(surface.tokens.spacing_large));
+                presentation_changed = true;
+            }
             Command::PresentOverlay {
                 surface_id,
                 overlay,
@@ -313,4 +316,11 @@ fn describe_revisioned(command: &Command) -> Option<(&'static str, &SurfaceId, u
         } => Some(("DismissOverlay", surface_id, *revision)),
         _ => None,
     }
+}
+
+fn set_content_margin(container: &GtkBox, margin: i32) {
+    container.set_margin_top(margin);
+    container.set_margin_bottom(margin);
+    container.set_margin_start(margin);
+    container.set_margin_end(margin);
 }

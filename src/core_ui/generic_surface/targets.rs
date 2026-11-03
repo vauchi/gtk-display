@@ -36,7 +36,8 @@ mod tests {
 
     fn tokens(minimum_target_size: u16, corner_radius: u16) -> PresentationTokens {
         let fixture: serde_json::Value =
-            serde_json::from_str(vauchi_app::ui::presentation_contract_fixture_json()).unwrap();
+            serde_json::from_str(vauchi_contract::fixtures::presentation_contract_v1_json())
+                .unwrap();
         let mut tokens: PresentationTokens = serde_json::from_value(
             fixture["initial_commands"][0]["ReplaceSurface"]["surface"]["tokens"].clone(),
         )

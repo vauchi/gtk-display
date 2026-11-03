@@ -13,7 +13,6 @@ use libadwaita as adw;
 use libadwaita::prelude::*;
 use std::collections::HashSet;
 
-use vauchi_app::theme::DesignTokens;
 use vauchi_contract::{Command, Event};
 
 use crate::core_ui::engine_link::EngineHandle;
@@ -349,12 +348,13 @@ fn show_qr_paste_dialog(
 
     // Text entry for pasting QR data
     let placeholder = app_engine.string("platform.qr_paste_placeholder");
-    let tokens = DesignTokens::default();
+    let margin =
+        crate::core_ui::theme::painted_tokens().map_or(0, |tokens| i32::from(tokens.spacing_large));
     let entry = gtk4::Entry::builder()
         .placeholder_text(&placeholder)
         .hexpand(true)
-        .margin_start(tokens.spacing.lg as i32)
-        .margin_end(tokens.spacing.lg as i32)
+        .margin_start(margin)
+        .margin_end(margin)
         .build();
     dialog.set_extra_child(Some(&entry));
 

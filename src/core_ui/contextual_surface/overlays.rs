@@ -324,18 +324,13 @@ fn overlay_button(action: &vauchi_contract::ActionSpec, kind: OverlayKind) -> Bu
         None => button.set_label(&action.label),
     }
     button.set_widget_name(action.interaction_id.as_str());
-    // `OverlaySpec` carries no `PresentationTokens` of its own (unlike
-    // `SurfaceSpec`), so a nav item has no per-surface touch-target floor to
-    // read. The bundled design tokens' touch-target minimum is the same
-    // value Core derives `PresentationTokens::minimum_target_size` from, and
-    // is the best available source until overlays carry tokens too.
-    let target_px = i32::from(
-        vauchi_app::theme::default_theme()
-            .tokens
-            .touch_target
-            .minimum,
-    );
-    button.set_size_request(-1, target_px);
+    // `OverlaySpec` carries no `PresentationTokens` of its own, so a nav item
+    // takes the touch-target floor of the surface the overlay opens over
+    // (private#1029, ADR-078 4d.7; tokens on overlays would cost a contract
+    // release round).
+    if let Some(tokens) = crate::core_ui::theme::painted_tokens() {
+        button.set_size_request(-1, i32::from(tokens.minimum_target_size));
+    }
     crate::core_ui::accessibility::apply_label(&button, &action.accessibility_label);
     // See `generic_surface::action_button`: `Serious` is not yet visible to
     // this build's linked vauchi-core, and `ActionTone` is

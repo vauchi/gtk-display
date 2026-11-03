@@ -10,7 +10,6 @@ use gtk4::{self, Box as GtkBox, Orientation, gio};
 use libadwaita as adw;
 use std::cell::RefCell;
 
-use vauchi_app::theme::DesignTokens;
 use vauchi_contract::{Event, StandardShortcut};
 
 use crate::core_ui::contextual_surface::{
@@ -131,13 +130,10 @@ fn build_ui(app: &adw::Application) {
     root.append(&header);
 
     // Content area wrapped in ToastOverlay for non-blocking toasts
-    let tokens = DesignTokens::default();
+    // Its margin comes with each surface (`handle_commands`), from Core's
+    // tokens; the renderer keeps none of its own (private#1029).
     let content = GtkBox::new(Orientation::Vertical, 0);
     content.set_hexpand(true);
-    content.set_margin_top(tokens.spacing.xl as i32);
-    content.set_margin_bottom(tokens.spacing.xl as i32);
-    content.set_margin_start(tokens.spacing.xl as i32);
-    content.set_margin_end(tokens.spacing.xl as i32);
 
     let toast_overlay = adw::ToastOverlay::new();
     toast_overlay.set_child(Some(&content));
