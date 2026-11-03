@@ -8,7 +8,7 @@
 
 include:
   - project: 'vauchi/scripts'
-    ref: ci-templates-v2026.11.02
+    ref: 6f3f3ce7227b015d40cd03d44a78583d039b28ec
     file:
       - '/ci-templates/rust-base.yml'
       - '/ci-templates/release.yml'
@@ -32,7 +32,7 @@ include:
       - '/ci-templates/cross-cutting-lint.yml'
 
 variables:
-  VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.02"
+  VAUCHI_SCRIPTS_REF: "6f3f3ce7227b015d40cd03d44a78583d039b28ec"
   # cargo audit runs with --deny warnings; every entry here is an
   # advisory with no fix available to us, not one we chose to skip.
   # anyhow (RUSTSEC-2026-0190) and yanked spin were also flagged and are
@@ -615,6 +615,7 @@ package:flatpak:
     expire_in: 1 week
 
 package:appimage:
+  extends: .install-linuxdeploy
   stage: package
   tags: [linux, self-hosted]
   # optional like package:deb/package:rpm: on MRs this job is always
@@ -633,23 +634,10 @@ package:appimage:
       allow_failure: true
   variables:
     DEPLOY_GTK_VERSION: "4"
-  before_script:
-    - |
-      if ! command -v linuxdeploy &>/dev/null; then
-        # --retry handles transient GitHub / github.com CDN 5xx-and-HTML-404
-        # that otherwise require a whole job rerun. --max-time bounds the
-        # job so a hung connection surfaces quickly.
-        curl -L --retry 3 --retry-max-time 60 --max-time 120 \
-          -o /usr/local/bin/linuxdeploy \
-          "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-        chmod +x /usr/local/bin/linuxdeploy
-        curl -L --retry 3 --retry-max-time 60 --max-time 60 \
-          -o /usr/local/bin/linuxdeploy-plugin-gtk.sh \
-          "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh"
-        chmod +x /usr/local/bin/linuxdeploy-plugin-gtk.sh
-      fi
   script:
+    # A manual MR run has no tag; it packages the manifest's version.
     - VERSION="${CI_COMMIT_TAG#v}"
+    - VERSION="${VERSION:-$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)}"
     - chmod +x packaging/appimage.sh
     - ./packaging/appimage.sh "$VERSION"
   artifacts:
