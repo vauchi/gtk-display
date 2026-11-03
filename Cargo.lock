@@ -3622,7 +3622,7 @@ dependencies = [
 
 [[package]]
 name = "vauchi-gtk"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bluer",
  "glib-build-tools",
