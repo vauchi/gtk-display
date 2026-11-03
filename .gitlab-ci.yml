@@ -543,7 +543,9 @@ release:ratchet-zero:
 
 package:deb:
   stage: package
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:bookworm
+  # Bookworm's own rustc (1.63) is far below what the crates need; the
+  # official image carries the toolchain rust-toolchain.toml pins.
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/rust:1.93.1-bookworm
   tags: [docker]
   needs:
     - job: build:app
@@ -552,10 +554,12 @@ package:deb:
       optional: true
   before_script:
     - apt-get update -qq
-    - apt-get install -y -qq devscripts debhelper cargo rustc
+    - apt-get install -y -qq devscripts debhelper
         libgtk-4-dev libadwaita-1-dev libqrencode-dev pkg-config
   script:
-    - dpkg-buildpackage -us -uc -b
+    # -d: debian/control's Build-Depends name Debian's cargo and rustc,
+    # which this image replaces with the pinned toolchain.
+    - dpkg-buildpackage -us -uc -b -d
     - mkdir -p deb-out && cp ../*.deb deb-out/
   artifacts:
     paths:
@@ -568,7 +572,9 @@ package:deb:
 
 package:rpm:
   stage: package
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/fedora:40
+  # Fedora 40 is end of life and its rust (1.86) is below what the crates
+  # need; Fedora 43's updates carry 1.99.
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/fedora:43
   tags: [docker]
   needs:
     - job: build:app
@@ -607,7 +613,10 @@ package:flatpak:
       when: manual
       allow_failure: true
   script:
-    - flatpak-builder --force-clean --repo=repo build packaging/com.vauchi.desktop.yml
+    # The image has the GNOME SDK but not the rust-stable extension the
+    # manifest names; flatpak-builder installs missing deps from Flathub.
+    - flatpak-builder --user --install-deps-from=flathub --force-clean
+        --repo=repo build packaging/com.vauchi.desktop.yml
     - flatpak build-bundle repo vauchi-gtk.flatpak com.vauchi.desktop
   artifacts:
     paths:
@@ -636,7 +645,8 @@ package:appimage:
     DEPLOY_GTK_VERSION: "4"
   script:
     # A manual MR run has no tag; it packages the manifest's version.
-    - VERSION="${CI_COMMIT_TAG#v}"
+    - VERSION="${CI_COMMIT_TAG:-}"
+    - VERSION="${VERSION#v}"
     - VERSION="${VERSION:-$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)}"
     - chmod +x packaging/appimage.sh
     - ./packaging/appimage.sh "$VERSION"
