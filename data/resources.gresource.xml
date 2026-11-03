@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me> -->
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <gresources>
-  <gresource prefix="/com/vauchi/desktop">
+  <gresource prefix="/app/vauchi/Vauchi">
     <file>icons/scalable/actions/pictogram-exchange-bump-symbolic.svg</file>
     <file>icons/scalable/actions/pictogram-exchange-cable-symbolic.svg</file>
     <file>icons/scalable/actions/pictogram-exchange-glance-symbolic.svg</file>

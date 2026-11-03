@@ -165,7 +165,7 @@ def check_cold_start():
 
     timeout = GLib.timeout_add_seconds(30, deadline)
     bus.call(
-        app_id, "/com/vauchi/desktop", "org.freedesktop.Application",
+        app_id, "/" + app_id.replace(".", "/"), "org.freedesktop.Application",
         "ActivateAction",
         GLib.Variant("(sava{sv})", (
             "open-notification",

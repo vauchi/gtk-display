@@ -11,7 +11,7 @@ use gtk4::gio;
 
 /// Resource directory added to the icon theme; icons live under
 /// `scalable/actions/` below it, as `data/icons/` lays them out.
-pub const ICON_RESOURCE_PATH: &str = "/com/vauchi/desktop/icons";
+pub const ICON_RESOURCE_PATH: &str = "/app/vauchi/Vauchi/icons";
 
 /// Makes the bundled pictograms visible to `gio::resources_*`. Idempotent.
 pub fn register_resources() {
