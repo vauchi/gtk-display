@@ -589,8 +589,11 @@ package:rpm:
         fontconfig-devel
   script:
     - mkdir -p rpmbuild/{SOURCES,SPECS}
-    - tar czf rpmbuild/SOURCES/vauchi-gtk-0.6.0.tar.gz
-        --transform 's,^,vauchi-gtk-0.6.0/,' --exclude=rpmbuild .
+    # The tarball follows Cargo.toml; a spec Version that disagrees fails
+    # rpmbuild, which is the check that both moved.
+    - VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+    - tar czf "rpmbuild/SOURCES/vauchi-gtk-${VERSION}.tar.gz"
+        --transform "s,^,vauchi-gtk-${VERSION}/," --exclude=rpmbuild .
     - cp packaging/vauchi-gtk.spec rpmbuild/SPECS/
     - rpmbuild --define "_topdir $(pwd)/rpmbuild" -bb rpmbuild/SPECS/vauchi-gtk.spec
     - mkdir -p rpm-out && cp rpmbuild/RPMS/**/*.rpm rpm-out/
