@@ -1,3 +1,10 @@
+vauchi-gtk (0.6.2-1) unstable; urgency=medium
+
+  * Release tags build the app, so the AppImage job has a binary to pack
+    (private#1029).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 11:23:21 +0100
+
 vauchi-gtk (0.6.1-1) unstable; urgency=medium
 
   * The deb, RPM and AppImage packages build in CI (private#1029).
