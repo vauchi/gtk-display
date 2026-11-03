@@ -8,7 +8,7 @@ use gtk4::{Box as GtkBox, Button, Label, Widget};
 use libadwaita as adw;
 use std::cell::RefCell;
 
-use vauchi_core::{
+use vauchi_contract::{
     ActionTone, Command, ContextBar, Event, InteractionId, StandardShortcut, SurfaceId,
 };
 
@@ -125,7 +125,7 @@ pub(super) fn render_primary_button(
     app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     surface_id: &SurfaceId,
-    action: &vauchi_core::ActionSpec,
+    action: &vauchi_contract::ActionSpec,
 ) {
     let button = build_button(GtkContextRole::Primary, action, true);
     button.set_margin_top(8);
@@ -219,7 +219,7 @@ pub(super) fn context_bar_button(interaction_id: &InteractionId) -> Option<Butto
 
 fn build_button(
     role: GtkContextRole,
-    action: &vauchi_core::ActionSpec,
+    action: &vauchi_contract::ActionSpec,
     emphasized: bool,
 ) -> Button {
     let label = match role {

@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use vauchi_app::ui::AppEngine;
-use vauchi_core::{Command, Event};
+use vauchi_contract::{Command, Event};
 
 /// What the shell asks of the engine, and nothing more.
 pub trait EngineLink {

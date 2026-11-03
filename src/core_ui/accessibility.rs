@@ -7,7 +7,7 @@ use gtk4::accessible::{Property, Relation, State};
 use gtk4::prelude::*;
 use gtk4::{Accessible, AccessibleInvalidState, AccessibleRelation, AccessibleRole};
 
-use vauchi_core::AccessibilitySpec;
+use vauchi_contract::AccessibilitySpec;
 
 pub(crate) fn apply(widget: &impl IsA<Accessible>, accessibility: &AccessibilitySpec) {
     make_nameable(widget);

@@ -10,7 +10,7 @@ use std::borrow::Cow;
 use std::cell::Cell;
 use std::rc::Rc;
 
-use vauchi_core::{Event, MotionPreference, OverlayKind, OverlaySpec, SurfaceId};
+use vauchi_contract::{Event, MotionPreference, OverlayKind, OverlaySpec, SurfaceId};
 
 use crate::core_ui::engine_link::{EngineHandle, EngineLink};
 
@@ -294,7 +294,7 @@ fn present_action_menu(
 /// Core names an icon on navigation items only, so an action menu stays plain
 /// rather than growing a column of neutral markers.
 fn overlay_icon_name(
-    action: &vauchi_core::ActionSpec,
+    action: &vauchi_contract::ActionSpec,
     kind: OverlayKind,
 ) -> Option<std::borrow::Cow<'static, str>> {
     if kind != OverlayKind::Navigation && action.icon_token.is_none() {
@@ -306,7 +306,7 @@ fn overlay_icon_name(
     }))
 }
 
-fn overlay_button(action: &vauchi_core::ActionSpec, kind: OverlayKind) -> Button {
+fn overlay_button(action: &vauchi_contract::ActionSpec, kind: OverlayKind) -> Button {
     let button = Button::builder()
         .sensitive(action.enabled)
         .halign(gtk4::Align::Fill)
@@ -341,8 +341,8 @@ fn overlay_button(action: &vauchi_core::ActionSpec, kind: OverlayKind) -> Button
     // this build's linked vauchi-core, and `ActionTone` is
     // `#[non_exhaustive]`, so the wildcard arm is required either way.
     match action.tone {
-        vauchi_core::ActionTone::Destructive => button.add_css_class("destructive-action"),
-        vauchi_core::ActionTone::Standard => {}
+        vauchi_contract::ActionTone::Destructive => button.add_css_class("destructive-action"),
+        vauchi_contract::ActionTone::Standard => {}
         _ => {}
     }
     button
@@ -367,7 +367,7 @@ fn animation_duration(full_duration_ms: u32) -> u32 {
 #[cfg(test)]
 mod close_label_tests {
     use super::close_label;
-    use vauchi_core::{OverlayKind, OverlaySpec};
+    use vauchi_contract::{OverlayKind, OverlaySpec};
 
     fn overlay(close_label: Option<&str>) -> OverlaySpec {
         OverlaySpec {
@@ -385,10 +385,10 @@ mod close_label_tests {
     struct KeyLink;
 
     impl EngineLink for KeyLink {
-        fn dispatch(&self, _: vauchi_core::Event) -> Vec<vauchi_core::Command> {
+        fn dispatch(&self, _: vauchi_contract::Event) -> Vec<vauchi_contract::Command> {
             Vec::new()
         }
-        fn initial_commands(&self) -> Vec<vauchi_core::Command> {
+        fn initial_commands(&self) -> Vec<vauchi_contract::Command> {
             Vec::new()
         }
         fn string(&self, key: &str) -> String {

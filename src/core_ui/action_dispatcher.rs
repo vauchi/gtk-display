@@ -14,7 +14,7 @@ use libadwaita::prelude::*;
 use std::collections::HashSet;
 
 use vauchi_app::theme::DesignTokens;
-use vauchi_core::{Command, Event};
+use vauchi_contract::{Command, Event};
 
 use crate::core_ui::engine_link::EngineHandle;
 use crate::platform::hardware;
@@ -199,7 +199,7 @@ pub(crate) fn handle_exchange_commands(
     }
 }
 
-fn post_notification(container: &GtkBox, notification: &vauchi_core::NotificationSpec) {
+fn post_notification(container: &GtkBox, notification: &vauchi_contract::NotificationSpec) {
     let Some(application) = container
         .root()
         .and_then(|root| root.downcast::<gtk4::Window>().ok())
@@ -256,7 +256,7 @@ fn execute_direct_send(
     toast_overlay: &adw::ToastOverlay,
     payload: Vec<u8>,
     is_initiator: bool,
-    endpoint: vauchi_core::DirectEndpoint,
+    endpoint: vauchi_contract::DirectEndpoint,
 ) {
     use std::sync::mpsc;
 

@@ -8,7 +8,7 @@ use gtk4::{Box as GtkBox, Orientation, Separator};
 use libadwaita as adw;
 use std::rc::Rc;
 
-use vauchi_core::{Command, InteractionId, SurfaceId};
+use vauchi_contract::{Command, InteractionId, SurfaceId};
 
 use super::widgets::{
     COMMAND_STATE, clear_title_row_for, context_bar_button, dispatch_event, render_primary_button,

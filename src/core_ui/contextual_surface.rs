@@ -37,7 +37,7 @@ pub fn replay_command_batch(
     widgets::COMMAND_STATE.with(|state| *state.borrow_mut() = GtkPresentationState::default());
     handle_commands(container, app_engine, toast_overlay, commands, None);
 }
-use vauchi_core::{
+use vauchi_contract::{
     ActionSpec, Command, ContextBar, Event, InteractionId, MotionPreference, NavigationSpec,
     OverlayKind, OverlaySpec, PaneLayout, PresentationProfile, StandardShortcut, SurfaceId,
     SurfaceSpec,

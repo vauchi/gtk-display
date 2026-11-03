@@ -9,7 +9,7 @@
 use gtk4::CssProvider;
 use gtk4::gdk::Display;
 use std::cell::RefCell;
-use vauchi_core::{PresentationColors, PresentationFonts, PresentationTokens};
+use vauchi_contract::{PresentationColors, PresentationFonts, PresentationTokens};
 
 thread_local! {
     /// One provider, reloaded in place: every surface carries colours, so

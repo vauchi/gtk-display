@@ -4,7 +4,7 @@
 use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Button, DrawingArea, Entry, Label, Orientation, Widget};
 use libadwaita as adw;
-use vauchi_core::{
+use vauchi_contract::{
     ActionSpec, BindingId, InputValue, PresentationImageShape, PresentationNode,
     PresentationQrErrorCorrection, PresentationQrPurpose, PresentationRow, PresentationTokens,
     QrPlacement, SurfaceId,
@@ -240,8 +240,8 @@ pub(super) fn render(
         } => {
             let group = GtkBox::new(
                 match axis {
-                    vauchi_core::PresentationAxis::Horizontal => Orientation::Horizontal,
-                    vauchi_core::PresentationAxis::Vertical => Orientation::Vertical,
+                    vauchi_contract::PresentationAxis::Horizontal => Orientation::Horizontal,
+                    vauchi_contract::PresentationAxis::Vertical => Orientation::Vertical,
                 },
                 8,
             );
@@ -604,7 +604,7 @@ fn row_action_controls(row: &PresentationRow) -> Vec<&ActionSpec> {
 #[cfg(test)]
 mod image_content_tests {
     use super::{ImageContent, image_content, shape_is_circle, sized_square_px};
-    use vauchi_core::PresentationImageShape;
+    use vauchi_contract::PresentationImageShape;
 
     // @internal
     #[test]
@@ -744,7 +744,7 @@ mod qr_placement_tests {
 #[cfg(test)]
 mod qr_error_correction_tests {
     use super::qr_error_correction_level;
-    use vauchi_core::PresentationQrErrorCorrection;
+    use vauchi_contract::PresentationQrErrorCorrection;
 
     // @internal
     #[test]
@@ -771,7 +771,7 @@ mod qr_error_correction_tests {
 #[cfg(test)]
 mod row_action_control_tests {
     use super::{PresentationRow, row_action_controls};
-    use vauchi_core::{AccessibilitySpec, ActionSpec, ActionTone, InteractionId};
+    use vauchi_contract::{AccessibilitySpec, ActionSpec, ActionTone, InteractionId};
 
     fn action(id: &str) -> ActionSpec {
         ActionSpec {

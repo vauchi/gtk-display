@@ -9,7 +9,7 @@ use libadwaita as adw;
 use std::cell::Cell;
 use std::rc::Rc;
 
-use vauchi_core::{ColorScheme, Command, Event, InputMode, MotionPreference, WindowClass};
+use vauchi_contract::{ColorScheme, Command, Event, InputMode, MotionPreference, WindowClass};
 
 pub(crate) fn install_environment_reporting(
     window: &adw::ApplicationWindow,

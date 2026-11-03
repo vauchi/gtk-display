@@ -17,7 +17,7 @@ use gtk4::{
 };
 use libadwaita as adw;
 
-use vauchi_core::{InteractionId, NavigationItem, NavigationSpec};
+use vauchi_contract::{InteractionId, NavigationItem, NavigationSpec};
 
 use crate::core_ui::engine_link::EngineHandle;
 

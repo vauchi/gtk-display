@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use gtk4::glib;
 use libadwaita as adw;
-use vauchi_core::{Command, CommandTarget, Event};
+use vauchi_contract::{Command, CommandTarget, Event};
 
 use crate::core_ui::engine_link::EngineHandle;
 

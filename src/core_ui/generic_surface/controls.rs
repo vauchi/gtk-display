@@ -3,7 +3,7 @@
 
 use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Label, Orientation, Widget};
-use vauchi_core::{
+use vauchi_contract::{
     AccessibilitySpec, BindingId, ChoiceOption, InputValue, PresentationNode, PresentationTokens,
     SurfaceId,
 };
@@ -34,9 +34,11 @@ pub(super) fn render(
             }
             apply_accessibility(&label, accessibility);
             match style {
-                vauchi_core::PresentationTextStyle::Heading => label.add_css_class("title-2"),
-                vauchi_core::PresentationTextStyle::Muted => label.add_css_class("dim-label"),
-                vauchi_core::PresentationTextStyle::Monospace => label.add_css_class("monospace"),
+                vauchi_contract::PresentationTextStyle::Heading => label.add_css_class("title-2"),
+                vauchi_contract::PresentationTextStyle::Muted => label.add_css_class("dim-label"),
+                vauchi_contract::PresentationTextStyle::Monospace => {
+                    label.add_css_class("monospace")
+                }
                 _ => {}
             }
             label.upcast()
@@ -65,8 +67,8 @@ pub(super) fn render(
                 .sensitive(*enabled)
                 .visibility(!matches!(
                     input_kind,
-                    vauchi_core::PresentationInputKind::Password
-                        | vauchi_core::PresentationInputKind::Pin
+                    vauchi_contract::PresentationInputKind::Password
+                        | vauchi_contract::PresentationInputKind::Pin
                 ))
                 .build();
             entry.set_widget_name(binding_id.as_str());
@@ -110,7 +112,7 @@ pub(super) fn render(
                     // GTK reports focus loss whatever took it, so no
                     // click-outside handling is needed here.
                     emit_binding_gesture(
-                        vauchi_core::Event::InputFocusEnded {
+                        vauchi_contract::Event::InputFocusEnded {
                             surface_id: blur_surface.clone(),
                             binding_id: blur_id.clone(),
                         },
@@ -128,7 +130,7 @@ pub(super) fn render(
                 // `activate` is Enter in the entry — GTK's own submit
                 // gesture.
                 emit_binding_gesture(
-                    vauchi_core::Event::InputSubmitted {
+                    vauchi_contract::Event::InputSubmitted {
                         surface_id: surface.clone(),
                         binding_id: id.clone(),
                     },
@@ -383,7 +385,7 @@ fn dropdown_choice(
 #[cfg(test)]
 mod choice_tests {
     use super::{ChoiceWidget, choice_value, choice_widget};
-    use vauchi_core::{ChoiceOption, InputValue};
+    use vauchi_contract::{ChoiceOption, InputValue};
 
     fn options(count: usize) -> Vec<ChoiceOption> {
         (1..=count)

@@ -7,7 +7,7 @@ use gtk4::Box as GtkBox;
 use gtk4::prelude::*;
 use libadwaita as adw;
 
-use vauchi_core::{Event, ExportFileSpec};
+use vauchi_contract::{Event, ExportFileSpec};
 
 use crate::core_ui::engine_link::EngineHandle;
 

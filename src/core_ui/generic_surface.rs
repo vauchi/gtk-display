@@ -12,7 +12,7 @@ use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Label, Orientation, Widget};
 use std::rc::Rc;
 
-use vauchi_core::{
+use vauchi_contract::{
     ActionSpec, Event, PresentationNode, PresentationTokens, SurfaceId, SurfaceLayout, SurfaceSpec,
 };
 
@@ -158,8 +158,8 @@ pub(super) fn action_button(
     // pin and a future one that adds it, without a name this build cannot
     // resolve.
     match action.tone {
-        vauchi_core::ActionTone::Destructive => button.add_css_class("destructive-action"),
-        vauchi_core::ActionTone::Standard => {}
+        vauchi_contract::ActionTone::Destructive => button.add_css_class("destructive-action"),
+        vauchi_contract::ActionTone::Standard => {}
         _ => {}
     }
     let action = action.clone();
@@ -178,8 +178,8 @@ pub(super) fn emit_binding_gesture(event: Event, on_event: &OnEvent) {
 
 pub(super) fn emit_value(
     surface_id: &SurfaceId,
-    binding_id: &vauchi_core::BindingId,
-    value: vauchi_core::InputValue,
+    binding_id: &vauchi_contract::BindingId,
+    value: vauchi_contract::InputValue,
     on_event: &OnEvent,
 ) {
     on_event(Event::SurfaceActivated {

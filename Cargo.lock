@@ -3634,6 +3634,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "vauchi-app",
+ "vauchi-contract",
  "vauchi-core",
  "vauchi-linux-hw",
  "yeslogic-fontconfig-sys",

@@ -6,7 +6,7 @@
 //! shell read neither before this module: buttons, rows, toggles and the
 //! standalone avatar node sized and rounded themselves from nothing at all.
 
-use vauchi_core::PresentationTokens;
+use vauchi_contract::PresentationTokens;
 
 /// The touch-target floor as a GTK size-request value.
 pub(crate) fn minimum_target_px(tokens: &PresentationTokens) -> i32 {
