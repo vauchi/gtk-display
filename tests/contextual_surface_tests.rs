@@ -484,7 +484,7 @@ fn native_renderer_restores_focus_by_core_binding_identity() {
     )
     .expect("read GTK presentation renderer");
 
-    assert!(source.contains("current_focus_name"));
+    assert!(source.contains("fn current_focus("));
     assert!(source.contains("restore_focus"));
     assert!(source.contains("widget_name"));
 }

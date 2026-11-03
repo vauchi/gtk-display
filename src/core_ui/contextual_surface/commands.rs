@@ -132,7 +132,7 @@ fn render_presentation(
     app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
 ) {
-    let focus_name = current_focus_name(container);
+    let focus = current_focus(container);
     let (surfaces, context_bar, navigation) = COMMAND_STATE.with(|state| {
         let state = state.borrow();
         let surfaces = state
@@ -205,25 +205,66 @@ fn render_presentation(
     } else {
         clear_title_row_for(container);
     }
-    restore_focus(container, focus_name.as_deref());
+    restore_focus(container, focus.as_ref());
 }
 
-fn current_focus_name(container: &GtkBox) -> Option<String> {
-    container
+/// The focused control by its Core-minted name, and the caret when it is
+/// a text input. Focus sits on an entry's inner `GtkText`, which carries
+/// no name of its own, so the name comes from the nearest named ancestor.
+struct FocusedControl {
+    name: String,
+    caret: Option<i32>,
+}
+
+fn current_focus(container: &GtkBox) -> Option<FocusedControl> {
+    let focused = container
         .root()
         .and_then(|root| root.downcast::<gtk4::Window>().ok())
-        .and_then(|window| gtk4::prelude::GtkWindowExt::focus(&window))
-        .map(|widget| widget.widget_name().to_string())
-        .filter(|name| !name.is_empty())
+        .and_then(|window| gtk4::prelude::GtkWindowExt::focus(&window))?;
+    let caret = focused
+        .downcast_ref::<gtk4::Editable>()
+        .map(|editable| editable.position());
+    let mut widget = Some(focused);
+    while let Some(candidate) = widget {
+        let name = candidate.widget_name();
+        // An unnamed GTK4 widget reports its type name instead.
+        if !name.is_empty() && name.as_str() != candidate.type_().name() {
+            return Some(FocusedControl {
+                name: name.to_string(),
+                caret,
+            });
+        }
+        widget = candidate.parent();
+    }
+    None
 }
 
-fn restore_focus(container: &GtkBox, widget_name: Option<&str>) {
-    let Some(widget_name) = widget_name else {
+/// Gives focus back to the control that had it before Core's batch was
+/// rendered. A text input gets it without selecting and with its caret
+/// where it was: a plain `grab_focus` selects an entry's text, and the
+/// next key then replaced what was typed (vauchi/private#1062).
+fn restore_focus(container: &GtkBox, focus: Option<&FocusedControl>) {
+    let Some(focus) = focus else {
         return;
     };
     let root: gtk4::Widget = container.clone().upcast();
-    if let Some(widget) = find_widget_by_name(&root, widget_name) {
-        widget.grab_focus();
+    let Some(widget) = find_widget_by_name(&root, &focus.name) else {
+        return;
+    };
+    let text = widget
+        .downcast_ref::<gtk4::Editable>()
+        .and_then(|editable| editable.delegate())
+        .and_then(|delegate| delegate.downcast::<gtk4::Text>().ok());
+    match text {
+        Some(text) => {
+            text.grab_focus_without_selecting();
+            if let Some(caret) = focus.caret {
+                text.set_position(caret);
+            }
+        }
+        None => {
+            widget.grab_focus();
+        }
     }
 }
 
