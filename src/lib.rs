@@ -11,3 +11,4 @@ pub mod engine;
 pub mod locale;
 pub mod platform;
 pub mod screen_catalog;
+pub mod shell;

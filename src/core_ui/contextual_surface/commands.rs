@@ -91,7 +91,7 @@ pub(crate) fn handle_commands(
             // exchange's sub-second wait needs (#450). Core computes the
             // wait (#548).
             Command::ScheduleWakeup { delay_millis, .. } => {
-                crate::app::arm_wakeup(
+                crate::shell::arm_wakeup(
                     app_engine,
                     container,
                     toast_overlay,

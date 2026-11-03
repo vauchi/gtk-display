@@ -35,6 +35,10 @@ impl EngineLink for RecordingLink {
         let args: Vec<String> = args.iter().map(|(k, v)| format!("{k}={v}")).collect();
         format!("[{key} {}]", args.join(","))
     }
+
+    fn take_invalidation(&self) -> bool {
+        false
+    }
 }
 
 // @scenario: generic_presentation_protocol.feature :: Invalid boundary input fails safely
@@ -80,9 +84,14 @@ fn the_shells_own_strings_come_through_the_link_at_the_engines_locale() {
 // @internal
 #[test]
 fn no_renderer_file_names_the_engine_type() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/core_ui");
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let shell = src.join("shell.rs");
     let mut offenders = Vec::new();
-    let mut stack = vec![root];
+    let shell_text = std::fs::read_to_string(&shell).expect("read src/shell.rs");
+    if shell_text.contains("AppEngine") || shell_text.contains("i18n::") {
+        offenders.push(shell.display().to_string());
+    }
+    let mut stack = vec![src.join("core_ui")];
     while let Some(dir) = stack.pop() {
         for entry in std::fs::read_dir(&dir).expect("read src/core_ui") {
             let path = entry.expect("dir entry").path();

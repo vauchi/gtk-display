@@ -3,23 +3,21 @@
 
 //! Headless smoke tests for GTK's generic Core presentation boundary.
 
-use std::cell::RefCell;
-
 use vauchi_app::i18n::get_string;
 use vauchi_app::ui::AppEngine;
 use vauchi_core::{
     AlertSpec, Command, Event, InputMode, MotionPreference, SurfaceId, WindowClass, api::Vauchi,
 };
 use vauchi_gtk::core_ui::contextual_surface::commands_for_event;
+use vauchi_gtk::engine::CoreEngine;
 
 // @internal — native timers enter the same command/event boundary as UI events (#764).
 #[test]
 fn wakeup_observation_returns_prepared_notifications_once() {
     let mut core = Vauchi::in_memory().expect("in-memory Core");
     core.create_identity("Alice").unwrap();
-    let engine = RefCell::new(AppEngine::new(core));
-    engine
-        .borrow()
+    let app_engine = AppEngine::new(core);
+    app_engine
         .vauchi()
         .dispatch_event(vauchi_core::VauchiEvent::EmergencyAlertReceived {
             contact_id: "notification-target".into(),
@@ -28,6 +26,7 @@ fn wakeup_observation_returns_prepared_notifications_once() {
             location: None,
             alert_nonce: [7; 32],
         });
+    let engine = CoreEngine::new(app_engine);
     let commands = commands_for_event(
         &engine,
         vauchi_core::event_from_json(r#""WakeupFired""#).unwrap(),
@@ -115,8 +114,9 @@ fn desktop_window_facts_produce_a_core_owned_profile() {
 // @internal
 #[test]
 fn rejected_event_yields_the_alert_core_prepared() {
-    let engine = RefCell::new(AppEngine::new(Vauchi::in_memory().expect("in-memory Core")));
-    let locale = engine.borrow().render_context().resolved_locale();
+    let app_engine = AppEngine::new(Vauchi::in_memory().expect("in-memory Core"));
+    let locale = app_engine.render_context().resolved_locale();
+    let engine = CoreEngine::new(app_engine);
     let activation_before_environment_reported = Event::SurfaceActivated {
         surface_id: SurfaceId::new("never-presented").unwrap(),
     };

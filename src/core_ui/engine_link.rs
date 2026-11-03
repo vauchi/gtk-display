@@ -25,6 +25,10 @@ pub trait EngineLink {
     fn string(&self, key: &str) -> String;
 
     fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String;
+
+    /// Whether Core invalidated the presentation since the last call; the
+    /// shell polls this and repaints the current surface when it is true.
+    fn take_invalidation(&self) -> bool;
 }
 
 /// The handle the app gives the shell; cloned into every widget closure.

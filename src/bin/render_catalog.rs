@@ -279,7 +279,7 @@ impl CatalogWindow {
 /// split view whose content pane is the toast-wrapped command target.
 fn build_app_window(app: &adw::Application, width: i32, height: i32) -> CatalogWindow {
     vauchi_gtk::core_ui::fonts::register_app_fonts();
-    let app_engine: EngineHandle = Rc::new(RefCell::new(AppEngine::new(
+    let app_engine: EngineHandle = Rc::new(vauchi_gtk::engine::CoreEngine::new(AppEngine::new(
         Vauchi::in_memory().expect("in-memory Core for the catalog harness"),
     )));
 

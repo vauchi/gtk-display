@@ -397,6 +397,10 @@ mod close_label_tests {
         fn string_with_args(&self, key: &str, _: &[(&str, &str)]) -> String {
             format!("[{key}]")
         }
+
+        fn take_invalidation(&self) -> bool {
+            false
+        }
     }
 
     // @internal

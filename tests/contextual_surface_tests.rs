@@ -453,9 +453,9 @@ fn keyboard_activation_uses_only_core_declared_shortcuts() {
 #[test]
 fn live_application_enters_only_through_the_generic_reducer_protocol() {
     let source = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/app.rs"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/shell.rs"),
     )
-    .expect("read GTK application entry point");
+    .expect("read the GTK application loop");
 
     for legacy_boundary in [
         "screen_renderer",

@@ -46,6 +46,10 @@ impl vauchi_gtk::core_ui::engine_link::EngineLink for FixtureLink {
     fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String {
         vauchi_app::i18n::get_string_with_args(vauchi_gtk::locale::detect_locale(), key, args)
     }
+
+    fn take_invalidation(&self) -> bool {
+        false
+    }
 }
 
 fn main() {
