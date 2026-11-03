@@ -7,7 +7,7 @@
 
 use vauchi_gtk::platform::deep_link::deep_link_uris;
 
-const DESKTOP_ENTRY: &str = include_str!("../data/com.vauchi.desktop.desktop");
+const DESKTOP_ENTRY: &str = include_str!("../data/app.vauchi.Vauchi.desktop");
 
 fn desktop_entry_value(key: &str) -> &'static str {
     DESKTOP_ENTRY
@@ -39,7 +39,7 @@ fn notifications_can_activate_the_packaged_application() {
     assert_eq!(desktop_entry_value("DBusActivatable"), "true");
     assert_eq!(desktop_entry_value("X-GNOME-UsesNotifications"), "true");
     let service = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("data/com.vauchi.desktop.service"),
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("data/app.vauchi.Vauchi.service"),
     )
     .expect("the package supplies a session D-Bus service");
     let key = |name: &str| {
@@ -47,7 +47,7 @@ fn notifications_can_activate_the_packaged_application() {
             .lines()
             .find_map(|line| line.strip_prefix(name)?.strip_prefix('='))
     };
-    assert_eq!(key("Name"), Some("com.vauchi.desktop"));
+    assert_eq!(key("Name"), Some("app.vauchi.Vauchi"));
     assert_eq!(key("Exec"), Some("/usr/bin/gvauchi --gapplication-service"));
 }
 

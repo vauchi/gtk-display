@@ -19,15 +19,15 @@ mkdir -p "${APPDIR}/usr/share/icons/hicolor/scalable/apps"
 cp target/release/gvauchi "${APPDIR}/usr/bin/"
 # A portable image has no stable installed path for D-Bus activation (#764).
 sed 's/^DBusActivatable=true$/DBusActivatable=false/' \
-  data/com.vauchi.desktop.desktop > "${APPDIR}/usr/share/applications/com.vauchi.desktop.desktop"
-cp data/com.vauchi.desktop.metainfo.xml "${APPDIR}/usr/share/metainfo/"
-cp data/com.vauchi.desktop.svg \
-  "${APPDIR}/usr/share/icons/hicolor/scalable/apps/com.vauchi.desktop.svg"
+  data/app.vauchi.Vauchi.desktop > "${APPDIR}/usr/share/applications/app.vauchi.Vauchi.desktop"
+cp data/app.vauchi.Vauchi.metainfo.xml "${APPDIR}/usr/share/metainfo/"
+cp data/app.vauchi.Vauchi.svg \
+  "${APPDIR}/usr/share/icons/hicolor/scalable/apps/app.vauchi.Vauchi.svg"
 
 export DEPLOY_GTK_VERSION=4
 linuxdeploy --appdir "$APPDIR" \
-  --desktop-file "${APPDIR}/usr/share/applications/com.vauchi.desktop.desktop" \
-  --icon-file "${APPDIR}/usr/share/icons/hicolor/scalable/apps/com.vauchi.desktop.svg" \
+  --desktop-file "${APPDIR}/usr/share/applications/app.vauchi.Vauchi.desktop" \
+  --icon-file "${APPDIR}/usr/share/icons/hicolor/scalable/apps/app.vauchi.Vauchi.svg" \
   --plugin gtk \
   --output appimage
 

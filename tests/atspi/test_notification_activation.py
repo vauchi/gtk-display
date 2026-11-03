@@ -55,10 +55,10 @@ def test_notification_action_cold_starts_and_delivers_target(
     app_data_dir = tmp_path / ("long-runner-path-" * 8)
     service_dir = app_data_dir / "dbus-1" / "services"
     service_dir.mkdir(parents=True)
-    service = (repo / "data/com.vauchi.desktop.service").read_text()
+    service = (repo / "data/app.vauchi.Vauchi.service").read_text()
     # Relocate the installed executable into this test's build directory.
     service = service.replace("/usr/bin/gvauchi", str(Path(gtk_binary).resolve()))
-    (service_dir / "com.vauchi.desktop.service").write_text(service)
+    (service_dir / "app.vauchi.Vauchi.service").write_text(service)
     # Private-bus tests must not activate the user's keyring or desktop portal.
     for name in ("org.freedesktop.secrets", "org.freedesktop.portal.Desktop"):
         (service_dir / f"{name}.service").write_text(
@@ -101,7 +101,7 @@ def check_cold_start():
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, Gio, GLib
 
-    app_id = "com.vauchi.desktop"
+    app_id = "app.vauchi.Vauchi"
     expected = "Contact 'notification-cold-start-764' was not found."
     bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
 

@@ -39,19 +39,19 @@ cargo build --release --features "audio,ble,camera"
 %install
 install -Dm 755 target/release/gvauchi \
     %{buildroot}%{_bindir}/gvauchi
-install -Dm 644 data/com.vauchi.desktop.desktop \
-    %{buildroot}%{_datadir}/applications/com.vauchi.desktop.desktop
-install -Dm 644 data/com.vauchi.desktop.service \
-    %{buildroot}%{_datadir}/dbus-1/services/com.vauchi.desktop.service
-install -Dm 644 data/com.vauchi.desktop.metainfo.xml \
-    %{buildroot}%{_datadir}/metainfo/com.vauchi.desktop.metainfo.xml
+install -Dm 644 data/app.vauchi.Vauchi.desktop \
+    %{buildroot}%{_datadir}/applications/app.vauchi.Vauchi.desktop
+install -Dm 644 data/app.vauchi.Vauchi.service \
+    %{buildroot}%{_datadir}/dbus-1/services/app.vauchi.Vauchi.service
+install -Dm 644 data/app.vauchi.Vauchi.metainfo.xml \
+    %{buildroot}%{_datadir}/metainfo/app.vauchi.Vauchi.metainfo.xml
 
 %files
 %license LICENSE
 %{_bindir}/gvauchi
-%{_datadir}/applications/com.vauchi.desktop.desktop
-%{_datadir}/dbus-1/services/com.vauchi.desktop.service
-%{_datadir}/metainfo/com.vauchi.desktop.metainfo.xml
+%{_datadir}/applications/app.vauchi.Vauchi.desktop
+%{_datadir}/dbus-1/services/app.vauchi.Vauchi.service
+%{_datadir}/metainfo/app.vauchi.Vauchi.metainfo.xml
 
 %changelog
 * Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.0-1

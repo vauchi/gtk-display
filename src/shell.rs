@@ -23,7 +23,7 @@ use crate::platform;
 /// Builds the app's engine once the application activates.
 pub type StartEngine = Box<dyn FnOnce() -> EngineHandle>;
 
-const APP_ID: &str = "com.vauchi.desktop";
+const APP_ID: &str = "app.vauchi.Vauchi";
 
 /// Flag consumed before GTK's argument parser runs.
 static RESET_FOR_TESTING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);

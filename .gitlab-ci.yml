@@ -576,7 +576,7 @@ package:rpm:
 
 # No Flatpak job: flatpak-builder's bwrap sandbox cannot mount /proc in
 # the unprivileged docker runner. Flatpak is built on Flathub once the app
-# is submitted there; packaging/com.vauchi.desktop.yml is its manifest
+# is submitted there; packaging/app.vauchi.Vauchi.yml is its manifest
 # (private#1053).
 
 package:appimage:

@@ -2,7 +2,8 @@
 <!-- SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me> -->
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <component type="desktop-application">
-  <id>com.vauchi.desktop</id>
+  <id>app.vauchi.Vauchi</id>
+  <launchable type="desktop-id">app.vauchi.Vauchi.desktop</launchable>
   <name>Vauchi</name>
   <summary>Privacy-focused updatable contact cards</summary>
   <metadata_license>GPL-3.0-or-later</metadata_license>
