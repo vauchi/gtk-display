@@ -88,15 +88,12 @@ fn no_renderer_file_names_the_engine_type() {
             let path = entry.expect("dir entry").path();
             if path.is_dir() {
                 stack.push(path);
-            } else if path.extension().is_some_and(|e| e == "rs")
-                && path.file_name().is_some_and(|n| n != "engine_link.rs")
-                && {
-                    let text = std::fs::read_to_string(&path).expect("read source");
-                    text.contains("AppEngine")
-                        || text.contains("vauchi_app::i18n")
-                        || text.contains("i18n::")
-                }
-            {
+            } else if path.extension().is_some_and(|e| e == "rs") && {
+                let text = std::fs::read_to_string(&path).expect("read source");
+                text.contains("AppEngine")
+                    || text.contains("vauchi_app::i18n")
+                    || text.contains("i18n::")
+            } {
                 offenders.push(path.display().to_string());
             }
         }
