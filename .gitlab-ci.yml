@@ -30,6 +30,7 @@ include:
       - '/ci-templates/verified-fetch.yml'
       - '/ci-templates/tool-install.yml'
       - '/ci-templates/cross-cutting-lint.yml'
+      - '/ci-templates/domain-calls.yml'
 
 variables:
   VAUCHI_SCRIPTS_REF: "6f3f3ce7227b015d40cd03d44a78583d039b28ec"
@@ -416,3 +417,11 @@ check:pictogram-copies-current:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "schedule"
+
+# Humble UI (ADR-021/043) and VRS02 (ADR-066): fail an MR that adds a
+# domain-mutating call or a form-factor branch beyond .audit-baseline.json.
+# The template defaults VAUCHI_SCRIPTS_REF to main; pin it to the include.
+lint:domain-calls:
+  extends: .domain-calls-job
+  variables:
+    VAUCHI_SCRIPTS_REF: "6f3f3ce7227b015d40cd03d44a78583d039b28ec"
