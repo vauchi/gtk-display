@@ -543,9 +543,10 @@ release:ratchet-zero:
 
 package:deb:
   stage: package
-  # Bookworm's own rustc (1.63) is far below what the crates need; the
-  # official image carries the toolchain rust-toolchain.toml pins.
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/rust:1.93.1-bookworm
+  # The official image carries the toolchain rust-toolchain.toml pins
+  # (Debian's own rustc is far older). Trixie, not bookworm: the crates need
+  # gtk4 >= 4.10 and libadwaita >= 1.4; bookworm has 4.8 and 1.2.
+  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/rust:1.93.1-trixie
   tags: [docker]
   needs:
     - job: build:app
@@ -619,8 +620,9 @@ package:flatpak:
     # manifest names; flatpak-builder installs missing deps from Flathub.
     - flatpak remote-add --user --if-not-exists flathub
         https://dl.flathub.org/repo/flathub.flatpakrepo
+    # The docker runner has no FUSE device for rofiles-fuse.
     - flatpak-builder --user --install-deps-from=flathub --force-clean
-        --repo=repo build packaging/com.vauchi.desktop.yml
+        --disable-rofiles-fuse --repo=repo build packaging/com.vauchi.desktop.yml
     - flatpak build-bundle repo vauchi-gtk.flatpak com.vauchi.desktop
   artifacts:
     paths:
