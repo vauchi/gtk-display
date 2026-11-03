@@ -11,6 +11,7 @@ include:
     ref: ci-templates-v2026.11.02
     file:
       - '/ci-templates/rust-base.yml'
+      - '/ci-templates/release.yml'
       - '/ci-templates/shell-command-conformance.yml'
       - '/ci-templates/security.yml'
       - '/ci-templates/mr-rules.yml'
@@ -42,6 +43,7 @@ variables:
   GTK_VERIFY_ALLOW_FAILURE: "false"
 
 stages:
+  - auto-tag
   - lint
   - build
   - test
@@ -49,6 +51,12 @@ stages:
   - verify
   - package
   - deploy
+
+# A version bump merged to main is the release: the job pushes
+# v<Cargo.toml version> when that tag does not exist yet, so the tag always
+# sits on the merged commit (private#1045).
+auto-tag:version:
+  extends: .auto-tag
 
 # Cross-cutting lint bundle: docs gate + locale-key-coverage + design-tokens + humble.
 # All checks run sequentially in one docker job to reduce runner scheduling overhead.
