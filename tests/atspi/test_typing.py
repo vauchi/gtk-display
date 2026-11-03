@@ -68,3 +68,25 @@ def test_each_typed_key_appends_to_the_name(gtk_app_onboarding):
         )
 
     assert _name_text(app) == "Alice"
+
+
+# @scenario: generic_presentation_protocol.feature :: Responsive transitions preserve interaction state
+def test_typing_keeps_the_same_entry_widget(gtk_app_onboarding):
+    """Core answers each key at the same revision, which keeps the surface's
+    structure (contract `SurfaceSpec::revision`), so the shell updates what
+    it shows in place: the entry being typed in stays the same widget, and
+    with it the caret, selection, input-method composition and the screen
+    reader's position (vauchi/private#1062)."""
+    app = gtk_app_onboarding
+    assert click_button(app, "Create new identity"), dump_tree(app)
+    assert wait_for_element(app, role="text", name="Display name input", timeout=5.0)
+    _focus_name(app)
+    assert _focused(app), dump_tree(app)
+    before = _name_entry(app).path
+
+    for typed in ("B", "Bo", "Bob"):
+        _type(typed[-1])
+        wait_until(lambda expected=typed: _name_text(app) == expected, timeout=3.0)
+
+    assert _name_entry(app).path == before, "the entry was rebuilt while typing"
+    assert _focused(app)
