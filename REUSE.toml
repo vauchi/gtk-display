@@ -57,11 +57,3 @@ SPDX-License-Identifier = "OFL-1.1"
 path = ["supply-chain/**"]
 SPDX-FileCopyrightText = "2026 Mattia Egloff <mattia.egloff@pm.me>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
-
-# Debian formats that allow no comment line: dpkg rejects an SPDX header in
-# source/format ("source package format ... is invalid") and warns on one in
-# the changelog.
-[[annotations]]
-path = ["debian/changelog", "debian/source/format"]
-SPDX-FileCopyrightText = "2026 Mattia Egloff <mattia.egloff@pm.me>"
-SPDX-License-Identifier = "GPL-3.0-or-later"

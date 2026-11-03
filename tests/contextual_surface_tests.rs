@@ -496,7 +496,6 @@ fn live_platform_callbacks_report_raw_events_to_the_generic_reducer() {
     for relative in [
         "src/core_ui/action_dispatcher.rs",
         "src/core_ui/hardware_link.rs",
-        "src/seed_identity.rs",
         "src/platform/camera.rs",
         "src/platform/linux_hardware_link.rs",
     ] {

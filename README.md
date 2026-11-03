@@ -14,9 +14,12 @@
 
 # Vauchi Linux GTK
 
-Native Linux desktop app for Vauchi — living contact cards, exchanged in person.
+The GTK4 renderer of Vauchi — living contact cards, exchanged in person.
 
-Built with GTK4-rs (Rust). Uses `vauchi-core` as a direct Rust dependency (no FFI overhead).
+A library, built with GTK4-rs and libadwaita: it renders Core's generic
+presentation commands and reports events. The Linux app, `gvauchi`, wires
+it to Core and ships the packages; it lives in
+[linux-app](https://gitlab.com/vauchi/linux-app).
 
 ## Prerequisites
 
@@ -33,8 +36,8 @@ cargo test
 
 ## Architecture
 
-This app is a display-only shell: core emits generic, fully prepared
-presentation commands, and the app reports opaque events back.
+This crate is a display-only shell: core emits generic, fully prepared
+presentation commands, and the renderer reports opaque events back.
 
 - **Generic surface** (`src/core_ui/generic_surface`) renders core's
   presentation commands with GTK4 widgets
@@ -45,13 +48,9 @@ presentation commands, and the app reports opaque events back.
   input to core as opaque events
 - **Platform chrome**: HeaderBar, GNotification, libadwaita styling
 
-All business logic lives in `vauchi-core` (Rust). This repo is a pure rendering layer.
-
-## Packaging
-
-- Flatpak (Flathub)
-- AppImage
-- .deb
+All business logic lives in Core. This repo is a pure rendering layer,
+tested against the contract's fixture corpus (`tests/contract_replay.rs`)
+and through `render_fixture`, which renders a surface with no engine.
 
 ## License
 

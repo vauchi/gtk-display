@@ -9,7 +9,6 @@ pub mod deep_link;
 pub mod executors;
 pub mod hardware;
 pub mod header_bar;
-pub mod init;
 #[cfg(any(
     feature = "ble",
     feature = "nfc",
@@ -17,7 +16,6 @@ pub mod init;
     feature = "camera"
 ))]
 pub mod linux_hardware_link;
-pub mod network_cost;
 pub mod notifications;
 pub mod screen_capture_protection;
 pub mod tcp_exchange;

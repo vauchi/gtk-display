@@ -4,7 +4,7 @@
 //! 4): widgets emit contract `Event`s and apply the `Command`s that come
 //! back; they never name the engine's type. The app owns the engine and
 //! hands the shell an [`EngineHandle`]; the app's engine implements the
-//! link in [`crate::engine`], outside the renderer.
+//! link outside the renderer (linux-app's `CoreEngine`).
 use std::rc::Rc;
 
 use vauchi_contract::{Command, Event};

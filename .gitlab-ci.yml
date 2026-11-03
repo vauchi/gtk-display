@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# GitLab CI for vauchi-gtk (Linux GTK4 frontend)
+# GitLab CI for vauchi-gtk, the GTK4 renderer (ADR-078 gtk-display); the
+# gvauchi app, its packages and screenshots are built in linux-app.
 #
 # Uses shared templates from vauchi/scripts for self-hosted runner setup,
 # caching, and change-based rules.
@@ -25,7 +26,6 @@ include:
       - '/ci-templates/badges.yml'
       - '/ci-templates/freshness.yml'
       - '/ci-templates/github-mirror.yml'
-      - '/ci-templates/vrt-upload.yml'
       - '/ci-templates/coverage.yml'
       - '/ci-templates/verified-fetch.yml'
       - '/ci-templates/tool-install.yml'
@@ -49,7 +49,6 @@ stages:
   - test
   - security
   - verify
-  - package
   - deploy
 
 # A version bump merged to main is the release: the job pushes
@@ -131,21 +130,14 @@ build:app:
   before_script:
     - !reference [.self-hosted, before_script]
   script:
-    - cargo build --release
+    - cargo build --release --bin render_fixture
   artifacts:
     paths:
-      - target/release/gvauchi
-      - target/release/seed-identity
       - target/release/render_fixture
-      - target/release/render_catalog
     expire_in: 1 week
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    # A release tag builds too: package:appimage packs this job's gvauchi,
-    # and without it the v0.6.1 tag pipeline failed ("cannot stat
-    # target/release/gvauchi"), cancelling deb and rpm with it.
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
 test:unit:
   extends: [.linux-runner, .timeout-cold-rebuild]
@@ -186,19 +178,13 @@ contract:replay:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-# AT-SPI accessibility + widget tree tests
+# AT-SPI accessibility + widget tree tests of the renderer, each surface
+# rendered by render_fixture with no engine
 test:a11y:
   stage: test
   needs:
     - job: build:app
   tags: [linux, self-hosted]
-  # Shared with test:snapshots. Both launch gvauchi under Xvfb, both
-  # `needs: build:app`, and both land on the same self-hosted shell
-  # runner — so without this they start within a second of each other
-  # and contend for the runner's display and AT-SPI registry. Every
-  # observed overlap failed; the runs that passed were the ones that
-  # happened not to overlap.
-  resource_group: gtk-xvfb
   # Self-heal residual AT-SPI startup-timing flakes. The Cairo-renderer
   # fix in run-tests.sh removes the GPU/DRI3 cause; retry absorbs the rare
   # remaining "did not appear on the AT-SPI tree within Ns" race. A real
@@ -211,7 +197,7 @@ test:a11y:
       - runner_system_failure
   script:
     - chmod +x tests/atspi/run-tests.sh
-    - tests/atspi/run-tests.sh -v --tb=short -k "not test_snapshots"
+    - tests/atspi/run-tests.sh -v --tb=short
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
@@ -222,151 +208,6 @@ test:a11y:
           - ".gitlab-ci.yml"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-# Visual snapshot regression — captures each screen under Xvfb and
-# compares against committed baselines using ImageMagick compare.
-# First run: generates baselines (skips, does not fail).
-# Subsequent runs: diffs against baselines, fails on visual regression.
-# To regenerate: UPDATE_SNAPSHOTS=1 ./run-tests.sh -k test_snapshots
-#
-# The 2026-04 AT-SPI navigate-action no-op (problem record
-# `2026-05-16-linux-gtk-atspi-sidebar-navigate`) is FIXED: each sidebar
-# label is now wrapped in a flat `Button` (which exposes a working
-# AT-SPI "click" action), with activation deferred to an idle tick to
-# avoid the mid-handler reentrancy crash that sank the prior attempt.
-# The blocking regression guard for that fix is `test_navigation.py`
-# (runs under `test:a11y`, which is blocking) — it asserts do_action(0)
-# actually transitions screens, independent of pixels.
-#
-# This pixel-comparison gate stays `allow_failure: true` for now:
-# several screens (My Card, Contacts, Activity, …) render data derived
-# from the per-run RANDOM test identity (avatars/colours/timestamps), so
-# their pixels are not reproducible and the captured set is also
-# test-order dependent. Making this gate blocking needs a DETERMINISTIC
-# test identity (fixed keys) — tracked as the remaining G2/G3 work in the
-# problem record. Until then the job still runs (navigation + distinct-
-# capture gate) but does not block.
-test:snapshots:
-  allow_failure: true
-  stage: test
-  needs:
-    - job: build:app
-  tags: [linux, self-hosted]
-  # See test:a11y — these two must not share the runner's display.
-  resource_group: gtk-xvfb
-  variables:
-    VRT_PLATFORM: linux-gtk
-    VRT_SCREENSHOT_DIR: tests/atspi/snapshots/baseline
-  script:
-    - chmod +x tests/atspi/run-tests.sh
-    - mkdir -p tests/atspi/snapshots/{baseline,actual,diff}
-    - tests/atspi/run-tests.sh -v --tb=short -k "test_snapshots"
-  after_script:
-    # `.vrt-upload-script` now defines `fetch_vauchi_script` itself
-    # (vauchi/scripts ci-templates/vrt-upload.yml) — no inline copy needed.
-    - !reference [.vrt-upload-script, script]
-  artifacts:
-    when: always
-    paths:
-      - tests/atspi/snapshots/baseline/
-      - tests/atspi/snapshots/actual/
-      - tests/atspi/snapshots/diff/
-    expire_in: 30 days
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        compare_to: refs/heads/$CI_DEFAULT_BRANCH
-        paths:
-          - "src/**/*"
-          - "tests/atspi/**/*"
-          - ".gitlab-ci.yml"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# Screen catalog render — replays every Core screen batch through the
-# production command path (`handle_commands`, ADR-066) inside the real
-# window chrome and publishes one PNG per screen and variant (default,
-# light theme, large text) under build/screen-catalog/. No navigation is
-# driven, so unlike test:snapshots it cannot flake on AT-SPI timing.
-#
-# The full catalog comes from Cargo.lock's contract revision. Missing or
-# invalid catalogs fail the job; artifacts include the revision and hash.
-test:screen-catalog:
-  allow_failure: false
-  stage: test
-  needs:
-    - job: build:app
-  tags: [linux, self-hosted]
-  # See test:a11y — Xvfb jobs must not share the runner's display.
-  resource_group: gtk-xvfb
-  variables:
-    VRT_PLATFORM: linux-gtk
-    VRT_SCREENSHOT_DIR: build/screen-catalog
-    CATALOG_OUT_DIR: build/screen-catalog
-    # The light variant needs a light theme; Core built from a cargo git
-    # checkout compiles in only the default dark one, so the renderer reads
-    # the catalog `.clone-themes` generates from the sibling repo instead.
-    VAUCHI_THEMES_JSON: ../themes/generated/themes.json
-  before_script:
-    - !reference [.self-hosted, before_script]
-    - !reference [.clone-themes, before_script]
-  script:
-    - mkdir -p "$CATALOG_OUT_DIR"
-    - |
-      mkdir -p build
-      curl --fail-with-body --silent --show-error \
-        --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-        "${CI_API_V4_URL}/projects/vauchi%2Fcontract/repository/files/ci%2Ffetch-screen-catalog.py/raw?ref=5ff7c6fe7240a69c2a5b901f5f62745ee5626b5a" \
-        -o build/fetch-screen-catalog.py
-      python3 build/fetch-screen-catalog.py build/screen_catalog_v1.json
-    - |
-      CATALOG=build/screen_catalog_v1.json
-      CATALOG_SOURCE="pinned full contract catalog"
-      chmod +x target/release/render_catalog
-      # Same headless recipe as tests/atspi/run-tests.sh: Cairo renderer
-      # (no DRI3 under Xvfb), a private display, a fresh session bus.
-      env GSK_RENDERER=cairo LIBGL_ALWAYS_SOFTWARE=1 GDK_BACKEND=x11 XDG_CURRENT_DESKTOP=none \
-        xvfb-run -a -s '-screen 0 980x1480x24' \
-        dbus-run-session -- target/release/render_catalog "$CATALOG" "$CATALOG_OUT_DIR" 900 1400
-      count=$(find "$CATALOG_OUT_DIR" -name '*.png' | wc -l | tr -d ' ')
-      echo "rendered $count PNG(s) from: $CATALOG_SOURCE"
-      [ "$count" -gt 0 ]
-  after_script:
-    - !reference [.vrt-upload-script, script]
-  artifacts:
-    when: always
-    paths:
-      - build/screen_catalog_v1.json
-      - build/screen_catalog_v1.provenance.json
-      - build/screen-catalog/
-    expire_in: 30 days
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# Manual snapshot regeneration — run via GitLab UI to update baselines.
-# Trigger: Pipelines → Run pipeline → REGENERATE_SNAPSHOTS=1
-test:snapshots:record:
-  stage: test
-  needs:
-    - job: build:app
-  tags: [linux, self-hosted]
-  # See test:a11y — manual, but it launches the same harness on the same
-  # runner, so it must queue behind the other two rather than beside them.
-  resource_group: gtk-xvfb
-  variables:
-    UPDATE_SNAPSHOTS: "1"
-  script:
-    - chmod +x tests/atspi/run-tests.sh
-    - tests/atspi/run-tests.sh -v --tb=short -k "test_snapshots"
-  artifacts:
-    when: always
-    paths:
-      - tests/atspi/snapshots/baseline/
-    expire_in: 90 days
-  rules:
-    - if: $REGENERATE_SNAPSHOTS == "1"
-      when: manual
-
-# Coverage: cargo-llvm-cov on main merges (not MRs)
 coverage:workspace:
   extends: [.coverage-job, .linux-runner, .timeout-cold-rebuild]
   before_script:
@@ -510,122 +351,9 @@ verify:upstream-prerelease:
       allow_failure: true
     - !reference [.verify-on-upstream-prerelease, rules]
 
-# ============================================================
-# Package Stage — build-verification for distro packages
-# ============================================================
-# Only run on tags or manual trigger — not on every MR.
-
-# Exact-zero release gate (ADR-066): package:deb/package:rpm run on any
-# tag (bare $CI_COMMIT_TAG, not just semver), so this overrides the
-# shared template's semver-only default rule to match — otherwise a
-# non-semver tag push would create those jobs without this one existing
-# alongside them, and their `needs:` would reference an absent job.
+# Exact-zero release gate (ADR-066) on release tags, the template's rule.
 release:ratchet-zero:
   extends: .release-ratchet-zero
-  rules:
-    - if: $CI_COMMIT_TAG
-
-package:deb:
-  stage: package
-  # The official image carries the toolchain rust-toolchain.toml pins
-  # (Debian's own rustc is far older). Trixie, not bookworm: the crates need
-  # gtk4 >= 4.10 and libadwaita >= 1.4; bookworm has 4.8 and 1.2.
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/rust:1.93.1-trixie
-  tags: [docker]
-  needs:
-    - job: build:app
-      optional: true
-    - job: release:ratchet-zero
-      optional: true
-  before_script:
-    - apt-get update -qq
-    - apt-get install -y -qq devscripts debhelper
-        libgtk-4-dev libadwaita-1-dev libqrencode-dev pkg-config
-        libasound2-dev libdbus-1-dev libclang-dev libfontconfig1-dev
-  script:
-    # -d: debian/control's Build-Depends name Debian's cargo and rustc,
-    # which this image replaces with the pinned toolchain.
-    - dpkg-buildpackage -us -uc -b -d
-    - mkdir -p deb-out && cp ../*.deb deb-out/
-  artifacts:
-    paths:
-      - deb-out/*.deb
-    expire_in: 30 days
-  rules:
-    - if: $CI_COMMIT_TAG
-    - when: manual
-      allow_failure: true
-
-package:rpm:
-  stage: package
-  # Fedora 40 is end of life and its rust (1.86) is below what the crates
-  # need; Fedora 43's updates carry 1.99.
-  image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/fedora:43
-  tags: [docker]
-  needs:
-    - job: build:app
-      optional: true
-    - job: release:ratchet-zero
-      optional: true
-  before_script:
-    - dnf install -y rpm-build cargo rust gtk4-devel libadwaita-devel
-        qrencode-devel pkgconfig alsa-lib-devel dbus-devel clang-devel
-        fontconfig-devel
-  script:
-    - mkdir -p rpmbuild/{SOURCES,SPECS}
-    # The tarball follows Cargo.toml; a spec Version that disagrees fails
-    # rpmbuild, which is the check that both moved.
-    - VERSION=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
-    - tar czf "rpmbuild/SOURCES/vauchi-gtk-${VERSION}.tar.gz"
-        --transform "s,^,vauchi-gtk-${VERSION}/," --exclude=rpmbuild .
-    - cp packaging/vauchi-gtk.spec rpmbuild/SPECS/
-    - rpmbuild --define "_topdir $(pwd)/rpmbuild" -bb rpmbuild/SPECS/vauchi-gtk.spec
-    - mkdir -p rpm-out && cp rpmbuild/RPMS/**/*.rpm rpm-out/
-  artifacts:
-    paths:
-      - rpm-out/*.rpm
-    expire_in: 30 days
-  rules:
-    - if: $CI_COMMIT_TAG
-    - when: manual
-      allow_failure: true
-
-# No Flatpak job: flatpak-builder's bwrap sandbox cannot mount /proc in
-# the unprivileged docker runner. Flatpak is built on Flathub once the app
-# is submitted there; packaging/app.vauchi.Vauchi.yml is its manifest
-# (private#1053).
-
-package:appimage:
-  extends: .install-linuxdeploy
-  stage: package
-  tags: [linux, self-hosted]
-  # optional like package:deb/package:rpm: on MRs this job is always
-  # present (manual) but build:app only fires on rust/atspi/ci changes,
-  # so a hard need made non-code MRs un-creatable ("needs 'build:app'
-  # job, but 'build:app' does not exist in the pipeline").
-  needs:
-    - job: build:app
-      optional: true
-    - job: release:ratchet-zero
-      optional: true
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: manual
-      allow_failure: true
-  variables:
-    DEPLOY_GTK_VERSION: "4"
-  script:
-    # A manual MR run has no tag; it packages the manifest's version.
-    - VERSION="${CI_COMMIT_TAG:-}"
-    - VERSION="${VERSION#v}"
-    - VERSION="${VERSION:-$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)}"
-    - chmod +x packaging/appimage.sh
-    - ./packaging/appimage.sh "$VERSION"
-  artifacts:
-    paths:
-      - "vauchi-gtk-*-x86_64.AppImage"
-    expire_in: 1 week
 
 # ============================================================
 # Deploy Stage — Badge Pages

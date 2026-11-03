@@ -4,19 +4,10 @@
 
 [package]
 name = "vauchi-gtk"
-version = "0.7.3"
+version = "0.8.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
-description = "Vauchi desktop app for Linux (GTK4 + libadwaita)"
-default-run = "gvauchi"
-
-[[bin]]
-name = "gvauchi"
-path = "src/main.rs"
-
-[[bin]]
-name = "seed-identity"
-path = "src/seed_identity.rs"
+description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
 [features]
 default = ["audio", "ble", "camera", "mdns"]

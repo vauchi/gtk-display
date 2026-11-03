@@ -1,19 +1,15 @@
 # SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Pytest fixtures for AT-SPI GUI testing of gvauchi.
+"""Pytest fixtures for AT-SPI tests of the GTK renderer.
 
-Session-scoped: launches ONE gvauchi process shared by all tests.
-This avoids AT-SPI bus saturation from repeated process launches
-which causes "did not appear in AT-SPI tree" timeouts on CI.
+Each test renders contract surfaces through `render_fixture`; the app's
+own tests (gvauchi launched with Core) live in linux-app (ADR-078).
 """
 
-import os
 import json
-import shutil
+import os
 import subprocess
-import sys
-import tempfile
 import time
 
 import gi
@@ -21,11 +17,6 @@ import pytest
 
 gi.require_version("Atspi", "2.0")
 from gi.repository import Atspi  # noqa: E402
-
-from helpers import dump_tree, find_app  # noqa: E402
-
-_ATSPI_DIR = os.path.dirname(os.path.abspath(__file__))
-_WORKSPACE = os.path.dirname(os.path.dirname(os.path.dirname(_ATSPI_DIR)))
 
 
 @pytest.fixture
@@ -69,7 +60,7 @@ def _wait_for_atspi_ready(timeout: float = 10.0) -> bool:
     Returns True once `Atspi.get_desktop(0)` yields a desktop whose
     child count can be read without raising. The loaded self-hosted
     runner occasionally needs several seconds before the a11y bus +
-    registryd accept connections; launching gvauchi before that window
+    registryd accept connections; launching a renderer before that window
     causes the GTK a11y bridge to give up and the app never appears in
     the tree (observed as the 2/20 test:a11y flake on 2026-04-22).
     """
@@ -86,71 +77,8 @@ def _wait_for_atspi_ready(timeout: float = 10.0) -> bool:
     return False
 
 
-def _launch_and_find(binary, env, attempts=2, find_timeout=15.0):
-    """Launch gvauchi and wait for it to appear in the AT-SPI tree.
-
-    Retries the subprocess launch once if the first attempt fails to
-    register with AT-SPI — the GTK a11y bridge sometimes gives up on a
-    half-initialized bus on loaded CI runners. Returns (proc, app_root)
-    on success. Raises pytest.fail with diagnostic context on exhaustion.
-    """
-    if not _wait_for_atspi_ready(timeout=10.0):
-        pytest.fail(
-            "AT-SPI registry did not respond within 10s — bus launcher or "
-            "registryd failed to come up. Check tests/atspi/run-tests.sh "
-            "and CI runner health."
-        )
-
-    last_stderr = ""
-    last_stdout = ""
-    for attempt in range(1, attempts + 1):
-        # A file, not a pipe: nothing reads the pipe while the app runs, so
-        # once it filled the app blocked on its next write and froze.
-        log_path = tempfile.mkstemp(prefix="gvauchi-", suffix=".log")[1]
-        log_file = open(log_path, "wb")
-        proc = subprocess.Popen(
-            [binary],
-            env=env,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-        )
-        proc.vauchi_log_path = log_path
-        deadline = time.monotonic() + find_timeout
-        app_root = None
-        while time.monotonic() < deadline and app_root is None:
-            # Fail fast if the process died before registering with AT-SPI,
-            # instead of waiting the full timeout on a dead child.
-            if proc.poll() is not None:
-                break
-            app_root = find_app("gvauchi", timeout=0.5, process_id=proc.pid)
-
-        if app_root is not None:
-            return proc, app_root
-
-        proc.kill()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            pass
-        with open(log_path, "rb") as log:
-            last_stderr = log.read().decode(errors="replace")[-500:]
-
-    try:
-        desktop_dump = dump_tree(Atspi.get_desktop(0), max_depth=2)
-    except Exception as exc:  # noqa: BLE001
-        desktop_dump = f"<dump_tree failed: {exc}>"
-
-    pytest.fail(
-        f"gvauchi did not appear in AT-SPI tree within {find_timeout}s "
-        f"after {attempts} launch attempts.\n"
-        f"stdout: {last_stdout}\n"
-        f"stderr: {last_stderr}\n"
-        f"AT-SPI desktop at time of failure:\n{desktop_dump}"
-    )
-
-
 def _find_binary(name):
-    """Locate a binary built alongside gvauchi."""
+    """Locate a binary this repository builds."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_dir = os.path.dirname(os.path.dirname(script_dir))
     workspace = os.path.dirname(repo_dir)
@@ -160,193 +88,3 @@ def _find_binary(name):
             if os.path.isfile(path) and os.access(path, os.X_OK):
                 return path
     return None
-
-
-@pytest.fixture(scope="session")
-def gtk_binary():
-    """Path to the compiled gvauchi binary."""
-    path = _find_binary("gvauchi")
-    if path is None:
-        pytest.fail(
-            "gvauchi binary not found — run 'just build linux-gtk' first",
-        )
-    return path
-
-
-@pytest.fixture(scope="session")
-def _session_data_dir():
-    """Shared temp directory for the session-scoped app."""
-    d = tempfile.mkdtemp(prefix="vauchi-test-session-")
-    yield d
-    shutil.rmtree(d, ignore_errors=True)
-
-
-@pytest.fixture(scope="session")
-def gtk_app(gtk_binary, _session_data_dir):
-    """Launch a single gvauchi instance shared across all tests.
-
-    Session-scoped to avoid repeated process startup/teardown which
-    saturates the AT-SPI registry and causes timeouts on CI.
-
-    Uses VAUCHI_TEST_SEED=1 env var to create a test identity in-process,
-    avoiding the encryption-key mismatch that occurs when the separate
-    seed-identity binary runs without a keyring (each Vauchi::new()
-    generates a random storage key). Env var is used instead of a CLI
-    flag because GTK4's argument parser rejects unknown options.
-    """
-    env = os.environ.copy()
-    env["GTK_A11Y"] = "atspi"
-    env["XDG_DATA_HOME"] = _session_data_dir
-    env["VAUCHI_TEST_SEED"] = "1"
-    env["VAUCHI_TEST_NON_UNIQUE"] = "1"
-    env["VAUCHI_LOCALES_DIR"] = os.path.join(_WORKSPACE, "locales")
-
-    if "DISPLAY" not in env and "WAYLAND_DISPLAY" not in env:
-        pytest.skip("No display available")
-
-    proc, app_root = _launch_and_find(gtk_binary, env)
-
-    yield app_root
-
-    _record_early_exit(proc)
-    proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=5)
-    _print_app_log_tail(proc)
-
-
-_APP_LOGS = []
-
-
-def _print_app_log_tail(proc):
-    """Queue this app's own output for the end-of-run report.
-
-    Written from `pytest_terminal_summary`, because pytest captures file
-    descriptor 2 during fixtures and drops what a teardown prints.
-    """
-    path = getattr(proc, "vauchi_log_path", None)
-    if path and os.path.exists(path):
-        _APP_LOGS.append(path)
-
-
-def _record_early_exit(proc):
-    """Note an app that died before its teardown, with the code or signal.
-
-    A native crash (SIGSEGV, SIGABRT) prints nothing to the app's own log.
-    """
-    code = proc.poll()
-    if code is not None:
-        _APP_EXITS.append((getattr(proc, "vauchi_log_path", "?"), code))
-
-
-_APP_EXITS = []
-
-
-def pytest_terminal_summary(terminalreporter):
-    for path, code in _APP_EXITS:
-        terminalreporter.write_line(f"gvauchi exited before teardown: code {code} ({path})")
-    for path in _APP_LOGS:
-        with open(path, "rb") as log:
-            tail = log.read().decode(errors="replace").splitlines()[-400:]
-        terminalreporter.write_sep("-", f"gvauchi output: {path} (last {len(tail)} lines)")
-        for line in tail:
-            terminalreporter.write_line(line)
-
-
-@pytest.fixture(scope="session")
-def gtk_app_fresh(gtk_binary):
-    """Launch gvauchi with a fresh (empty) data directory — no seed.
-
-    Session-scoped. Used by onboarding tests that need a fresh state.
-    """
-    data_dir = tempfile.mkdtemp(prefix="vauchi-test-fresh-")
-    env = os.environ.copy()
-    env["GTK_A11Y"] = "atspi"
-    env["XDG_DATA_HOME"] = data_dir
-    env["VAUCHI_TEST_NON_UNIQUE"] = "1"
-    env["VAUCHI_LOCALES_DIR"] = os.path.join(_WORKSPACE, "locales")
-
-    if "DISPLAY" not in env and "WAYLAND_DISPLAY" not in env:
-        pytest.skip("No display available")
-
-    proc, app_root = _launch_and_find(gtk_binary, env)
-
-    yield app_root
-
-    _record_early_exit(proc)
-    proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=5)
-    _print_app_log_tail(proc)
-
-    shutil.rmtree(data_dir, ignore_errors=True)
-
-
-@pytest.fixture
-def gtk_app_seeded_isolated(gtk_binary):
-    """Launch an independent seeded app for crash-regression tests.
-
-    Function-scoped with the process handle exposed: a regression under
-    test may kill the app, and that must neither take down the shared
-    session instance nor go unnoticed — tests assert proc.poll() directly.
-    """
-    data_dir = tempfile.mkdtemp(prefix="vauchi-test-crash-")
-    env = os.environ.copy()
-    env["GTK_A11Y"] = "atspi"
-    env["XDG_DATA_HOME"] = data_dir
-    env["VAUCHI_TEST_SEED"] = "1"
-    env["VAUCHI_TEST_NON_UNIQUE"] = "1"
-    env["VAUCHI_LOCALES_DIR"] = os.path.join(_WORKSPACE, "locales")
-
-    if "DISPLAY" not in env and "WAYLAND_DISPLAY" not in env:
-        pytest.skip("No display available")
-
-    proc, app_root = _launch_and_find(gtk_binary, env)
-
-    yield app_root, proc
-
-    _record_early_exit(proc)
-    if proc.poll() is None:
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=5)
-
-    shutil.rmtree(data_dir, ignore_errors=True)
-
-
-@pytest.fixture
-def gtk_app_onboarding(gtk_binary):
-    """Launch an independent fresh app for a state-changing onboarding test."""
-    data_dir = tempfile.mkdtemp(prefix="vauchi-test-onboarding-")
-    env = os.environ.copy()
-    env["GTK_A11Y"] = "atspi"
-    env["XDG_DATA_HOME"] = data_dir
-    env["VAUCHI_TEST_NON_UNIQUE"] = "1"
-    env["VAUCHI_LOCALES_DIR"] = os.path.join(_WORKSPACE, "locales")
-
-    if "DISPLAY" not in env and "WAYLAND_DISPLAY" not in env:
-        pytest.skip("No display available")
-
-    proc, app_root = _launch_and_find(gtk_binary, env)
-
-    yield app_root
-
-    _record_early_exit(proc)
-    proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=5)
-    _print_app_log_tail(proc)
-
-    shutil.rmtree(data_dir, ignore_errors=True)

@@ -2,11 +2,11 @@
 # SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Run AT-SPI tests for vauchi-gtk under Xvfb with D-Bus + AT-SPI bus.
+# Run the renderer's AT-SPI tests under Xvfb with D-Bus + AT-SPI bus.
 #
 # Usage:
 #   ./run-tests.sh                    # run all tests
-#   ./run-tests.sh test_launch.py     # run specific test file
+#   ./run-tests.sh test_fixture_a11y.py  # run specific test file
 #   ./run-tests.sh -k "test_app"      # pytest filter
 
 set -euo pipefail
@@ -29,8 +29,6 @@ fi
 # Otherwise, run under Xvfb with a fresh D-Bus session and AT-SPI.
 # XDG_CURRENT_DESKTOP=none prevents xdg-desktop-portal from activating
 # compositor-specific portals (e.g., hyprland) that crash under Xvfb.
-UPDATE_SNAPSHOTS="${UPDATE_SNAPSHOTS:-}"
-export UPDATE_SNAPSHOTS
 
 # Resolve the AT-SPI helper binaries: Debian ships them under /usr/libexec,
 # Arch (and others) under /usr/lib. Hardcoding /usr/lib silently left the

@@ -1,4 +1,0 @@
-# Actual screenshots and diffs are generated at runtime — don't commit.
-# Only baseline/ is committed (the reference images).
-actual/
-diff/
