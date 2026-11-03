@@ -1,3 +1,9 @@
+vauchi-gtk (0.7.2-1) unstable; urgency=medium
+
+  * Typing into a text input keeps every character (private#1062).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 15:07:34 +0100
+
 vauchi-gtk (0.7.1-1) unstable; urgency=medium
 
   * The app ID is app.vauchi.Vauchi; the AppStream metadata is CC0-1.0
