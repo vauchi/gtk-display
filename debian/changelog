@@ -1,3 +1,10 @@
+vauchi-gtk (0.7.1-1) unstable; urgency=medium
+
+  * The app ID is app.vauchi.Vauchi; the AppStream metadata is CC0-1.0
+    (private#1029).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 13:08:49 +0100
+
 vauchi-gtk (0.7.0-1) unstable; urgency=medium
 
   * The GTK application is shell::run(start_engine, start_hardware); the

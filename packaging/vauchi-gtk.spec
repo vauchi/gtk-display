@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 Name:           vauchi-gtk
-Version:        0.7.0
+Version:        0.7.1
 Release:        1%{?dist}
 Summary:        Privacy-focused updatable contact cards (GTK desktop)
 
@@ -54,6 +54,10 @@ install -Dm 644 data/app.vauchi.Vauchi.metainfo.xml \
 %{_datadir}/metainfo/app.vauchi.Vauchi.metainfo.xml
 
 %changelog
+* Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.1-1
+- The app ID is app.vauchi.Vauchi; the AppStream metadata is CC0-1.0
+  (private#1029)
+
 * Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.0-1
 - The GTK application is shell::run(start_engine, start_hardware); the
   engine link reports invalidations (private#1029)
