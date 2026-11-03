@@ -30,7 +30,7 @@ pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent, lin
     while let Some(child) = container.first_child() {
         container.remove(&child);
     }
-    crate::core_ui::theme::apply_colors(&surface.tokens.colors);
+    crate::core_ui::theme::apply_tokens(&surface.tokens);
     apply_target_radius(&surface.tokens);
     let scrolled = gtk4::ScrolledWindow::builder()
         .vexpand(true)

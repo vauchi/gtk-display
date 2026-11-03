@@ -9,8 +9,7 @@
 use gtk4::CssProvider;
 use gtk4::gdk::Display;
 use std::cell::RefCell;
-use vauchi_app::theme::{DesignTokens, FontFamilyTokens};
-use vauchi_core::PresentationColors;
+use vauchi_core::{PresentationColors, PresentationFonts, PresentationTokens};
 
 thread_local! {
     /// One provider, reloaded in place: every surface carries colours, so
@@ -18,10 +17,11 @@ thread_local! {
     static THEME_PROVIDER: RefCell<Option<(CssProvider, String)>> = const { RefCell::new(None) };
 }
 
-/// Paint `colors` on the default display. A surface whose colours match the
-/// last ones painted costs nothing.
-pub fn apply_colors(colors: &PresentationColors) {
-    let css = generate_css(colors, &DesignTokens::default().font_family);
+/// Paint the colours and font families Core sends with a surface on the
+/// default display. A surface whose tokens match the last ones painted
+/// costs nothing.
+pub fn apply_tokens(tokens: &PresentationTokens) {
+    let css = generate_css(&tokens.colors, tokens.fonts.as_ref());
     THEME_PROVIDER.with(|slot| {
         let mut slot = slot.borrow_mut();
         if let Some((provider, painted)) = slot.as_mut() {
@@ -45,12 +45,18 @@ pub fn apply_colors(colors: &PresentationColors) {
     });
 }
 
-/// Generate a GTK4 CSS string from Core's `PresentationColors` and the
-/// bundled `FontFamilyTokens`.
+/// Generate a GTK4 CSS string from Core's `PresentationColors` and
+/// `PresentationFonts`. Without fonts no family is named and GTK's own
+/// font applies.
 ///
 /// Named colours (`@define-color vauchi_*`) let components reference a
 /// role; the widget selectors below paint libadwaita's own widgets.
-fn generate_css(colors: &PresentationColors, fonts: &FontFamilyTokens) -> String {
+fn generate_css(colors: &PresentationColors, fonts: Option<&PresentationFonts>) -> String {
+    let family = |pick: fn(&PresentationFonts) -> &str| {
+        fonts
+            .map(|fonts| format!("\n    font-family: \"{}\";", css_string(pick(fonts))))
+            .unwrap_or_default()
+    };
     format!(
         r#"
 /* Vauchi theme — generated from the colours Core sends with each surface */
@@ -69,8 +75,7 @@ fn generate_css(colors: &PresentationColors, fonts: &FontFamilyTokens) -> String
 
 window {{
     background-color: @vauchi_bg_primary;
-    color: @vauchi_text_primary;
-    font-family: "{body_font}";
+    color: @vauchi_text_primary;{body_font}
 }}
 
 /* libadwaita grounds the split view's `.sidebar-pane` but leaves the
@@ -152,13 +157,11 @@ checkbutton:focus-visible,
 /* Core's PresentationTextStyle::Heading maps to GTK's standard "title-2"
    style class (generic_surface/controls.rs); ::Monospace maps to GTK's
    built-in "monospace" class. Both get a brand typeface here. */
-.title-2 {{
-    font-family: "{display_font}";
+.title-2 {{{display_font}
     font-weight: 700;
 }}
 
-.monospace {{
-    font-family: "{mono_font}";
+.monospace {{{mono_font}
 }}
 
 /* Initials stand in for a missing avatar. Without a ground to sit on they
@@ -222,10 +225,23 @@ list .avatar {{
         warning = colors.warning,
         border = colors.border,
         focus_ring = colors.focus_ring.as_deref().unwrap_or(&colors.accent),
-        body_font = fonts.body,
-        display_font = fonts.display,
-        mono_font = fonts.mono,
+        body_font = family(|fonts| &fonts.body),
+        display_font = family(|fonts| &fonts.display),
+        mono_font = family(|fonts| &fonts.mono),
     )
+}
+
+/// A font name from a theme file may hold any character; escaping the
+/// backslash and the quote keeps it one CSS string, and control characters
+/// (a newline ends a CSS string) are dropped.
+fn css_string(name: &str) -> String {
+    name.chars()
+        .filter(|c| !c.is_control())
+        .flat_map(|c| match c {
+            '\\' | '"' => vec!['\\', c],
+            c => vec![c],
+        })
+        .collect()
 }
 
 // INLINE_TEST_REQUIRED: tests exercise private `generate_css` function
