@@ -1,3 +1,10 @@
+vauchi-gtk (0.7.3-1) unstable; urgency=medium
+
+  * A same-revision replacement updates the shown surface in place
+    (private#1062).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 15:40:20 +0100
+
 vauchi-gtk (0.7.2-1) unstable; urgency=medium
 
   * Typing into a text input keeps every character (private#1062).

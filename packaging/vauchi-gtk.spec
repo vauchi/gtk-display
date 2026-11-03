@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 Name:           vauchi-gtk
-Version:        0.7.2
+Version:        0.7.3
 Release:        1%{?dist}
 Summary:        Privacy-focused updatable contact cards (GTK desktop)
 
@@ -54,6 +54,10 @@ install -Dm 644 data/app.vauchi.Vauchi.metainfo.xml \
 %{_datadir}/metainfo/app.vauchi.Vauchi.metainfo.xml
 
 %changelog
+* Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.3-1
+- A same-revision replacement updates the shown surface in place
+  (private#1062)
+
 * Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.2-1
 - Typing into a text input keeps every character (private#1062)
 
