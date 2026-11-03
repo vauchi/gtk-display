@@ -7,6 +7,7 @@
 pub mod app;
 pub mod capture;
 pub mod core_ui;
+pub mod engine;
 pub mod locale;
 pub mod platform;
 pub mod screen_catalog;
