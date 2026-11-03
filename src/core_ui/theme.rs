@@ -232,7 +232,6 @@ list .avatar {{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vauchi_app::theme::DesignTokens;
 
     /// Every role distinct, so a test can tell which role a rule took.
     fn colors() -> PresentationColors {
@@ -254,8 +253,16 @@ mod tests {
         }
     }
 
+    fn fonts() -> PresentationFonts {
+        PresentationFonts {
+            display: "Display Face".to_string(),
+            body: "Body Face".to_string(),
+            mono: "Mono Face".to_string(),
+        }
+    }
+
     fn css_for(colors: &PresentationColors) -> String {
-        generate_css(colors, &DesignTokens::default().font_family)
+        generate_css(colors, Some(&fonts()))
     }
 
     /// Both the standalone `Image` node and a list row's avatar hand their
@@ -535,24 +542,57 @@ mod tests {
     /// everything that inherits from it.
     // @internal
     #[test]
-    fn generate_css_sets_font_families_from_design_tokens() {
+    fn generate_css_sets_the_font_families_core_sends_with_the_surface() {
         let css = css_for(&colors());
 
         assert!(
-            css.contains(r#"font-family: "Hanken Grotesk""#),
+            rule_body(&css, "window").contains(r#"font-family: "Body Face""#),
             "window rule should set the body family for base widgets"
         );
+        let heading = rule_body(&css, ".title-2");
         assert!(
-            css.contains(r#"font-family: "Bricolage Grotesque""#),
+            heading.contains(r#"font-family: "Display Face""#),
             "`.title-2` rule should set the display family for headings"
         );
         assert!(
-            css.contains("font-weight: 700"),
+            heading.contains("font-weight: 700"),
             "`.title-2` rule should use the display weight for headings"
         );
         assert!(
-            css.contains(r#"font-family: "JetBrains Mono""#),
+            rule_body(&css, ".monospace").contains(r#"font-family: "Mono Face""#),
             "`.monospace` rule should set the mono family"
+        );
+    }
+
+    // @internal
+    #[test]
+    fn generate_css_leaves_the_fonts_to_gtk_when_core_sends_none() {
+        let css = generate_css(&colors(), None);
+
+        assert!(
+            !css.contains("font-family"),
+            "a batch without a font block must not name a family"
+        );
+        assert!(
+            rule_body(&css, ".title-2").contains("font-weight: 700"),
+            "headings keep their weight without a family"
+        );
+    }
+
+    // @internal
+    #[test]
+    fn generate_css_keeps_a_quote_in_a_font_name_inside_its_css_string() {
+        let fonts = PresentationFonts {
+            display: "Display".to_string(),
+            body: "Evil\"; color: red; x: \"".to_string(),
+            mono: "Mono".to_string(),
+        };
+
+        let css = generate_css(&colors(), Some(&fonts));
+
+        assert!(
+            rule_body(&css, "window").contains(r#"font-family: "Evil\"; color: red; x: \"";"#),
+            "the quote must be escaped so the name stays one CSS string"
         );
     }
 }
