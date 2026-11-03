@@ -1,6 +1,13 @@
 # SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+vauchi-gtk (0.6.0-1) unstable; urgency=medium
+
+  * Hardware through linux-hw's LinuxHardware; fonts from Core's
+    presentation tokens; the renderer on the contract (private#1029).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 07:29:46 +0100
+
 vauchi-gtk (0.5.0-1) unstable; urgency=medium
 
   * Initial packaging of vauchi-gtk for Debian.

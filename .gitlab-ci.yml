@@ -580,8 +580,8 @@ package:rpm:
         qrencode-devel pkgconfig
   script:
     - mkdir -p rpmbuild/{SOURCES,SPECS}
-    - tar czf rpmbuild/SOURCES/vauchi-gtk-0.5.0.tar.gz
-        --transform 's,^,vauchi-gtk-0.5.0/,' --exclude=rpmbuild .
+    - tar czf rpmbuild/SOURCES/vauchi-gtk-0.6.0.tar.gz
+        --transform 's,^,vauchi-gtk-0.6.0/,' --exclude=rpmbuild .
     - cp packaging/vauchi-gtk.spec rpmbuild/SPECS/
     - rpmbuild --define "_topdir $(pwd)/rpmbuild" -bb rpmbuild/SPECS/vauchi-gtk.spec
     - mkdir -p rpm-out && cp rpmbuild/RPMS/**/*.rpm rpm-out/
