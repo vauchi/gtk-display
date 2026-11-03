@@ -141,23 +141,6 @@ build:app:
     expire_in: 1 week
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        compare_to: refs/heads/$CI_DEFAULT_BRANCH
-        paths:
-          - "**/*.rs"
-          - "**/Cargo.toml"
-          - "**/Cargo.lock"
-          - ".gitlab-ci.yml"
-          - "rust-toolchain.toml"
-          # test:a11y and test:snapshots `needs: build:app` (not optional),
-          # so build:app must also fire when only the AT-SPI harness under
-          # tests/atspi/** changes. Without this path, an AT-SPI-only MR
-          # produces a zero-job pipeline (GitLab marks the pipeline failed).
-          - "tests/atspi/**/*"
-          # test:a11y, test:snapshots and test:screen-catalog also run for
-          # any src/** change, a non-Rust file included (VCI06,
-          # vauchi/private#490).
-          - "src/**/*"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     # A release tag builds too: package:appimage packs this job's gvauchi,
     # and without it the v0.6.1 tag pipeline failed ("cannot stat
@@ -288,13 +271,10 @@ test:snapshots:
 # light theme, large text) under build/screen-catalog/. No navigation is
 # driven, so unlike test:snapshots it cannot flake on AT-SPI timing.
 #
-# The catalog comes from the contract repository (vauchi/contract,
-# ADR-078) through the raw-file API; if `fixtures/screen_catalog_v1.json`
-# cannot be read, the presentation contract's batches (same Command
-# shape) are rendered instead, and the trace says which source was used. `allow_failure`
-# until the real catalog lands and the job has proven stable on allyson.
+# The full catalog comes from Cargo.lock's contract revision. Missing or
+# invalid catalogs fail the job; artifacts include the revision and hash.
 test:screen-catalog:
-  allow_failure: true
+  allow_failure: false
   stage: test
   needs:
     - job: build:app
@@ -305,7 +285,6 @@ test:screen-catalog:
     VRT_PLATFORM: linux-gtk
     VRT_SCREENSHOT_DIR: build/screen-catalog
     CATALOG_OUT_DIR: build/screen-catalog
-    CONTRACT_FIXTURES_API: "${CI_API_V4_URL}/projects/vauchi%2Fcontract/repository/files/fixtures"
     # The light variant needs a light theme; Core built from a cargo git
     # checkout compiles in only the default dark one, so the renderer reads
     # the catalog `.clone-themes` generates from the sibling repo instead.
@@ -316,26 +295,15 @@ test:screen-catalog:
   script:
     - mkdir -p "$CATALOG_OUT_DIR"
     - |
-      fetch_contract_fixture() {
-        curl -fsSL -u "gitlab-ci-token:${CI_JOB_TOKEN}" \
-          "${CONTRACT_FIXTURES_API}%2F${1}/raw?ref=main" -o "build/${1}"
-      }
-      if fetch_contract_fixture screen_catalog_v1.json; then
-        CATALOG=build/screen_catalog_v1.json
-        CATALOG_SOURCE="contract main screen_catalog_v1.json"
-      elif fetch_contract_fixture presentation_contract_v1.json; then
-        CATALOG=build/presentation_contract_v1.json
-        CATALOG_SOURCE="FALLBACK contract main presentation_contract_v1.json (screen catalog unreadable)"
-      else
-        # Last resort: the vauchi-contract checkout cargo already fetched for
-        # build:app (Core depends on it) carries the fixture too.
-        CATALOG=$(find "${CARGO_HOME:-$HOME/.cargo}/git/checkouts" \
-          -path '*/contract-*/*/fixtures/presentation_contract_v1.json' | head -n 1)
-        [ -n "$CATALOG" ] || { echo "no catalog source reachable (contract raw API and cargo checkout)"; exit 1; }
-        CATALOG_SOURCE="FALLBACK pinned cargo checkout $CATALOG (contract raw API unreachable)"
-      fi
-      echo "catalog source: $CATALOG_SOURCE"
-      echo "$CATALOG_SOURCE" > "$CATALOG_OUT_DIR/SOURCE.txt"
+      mkdir -p build
+      curl --fail-with-body --silent --show-error \
+        --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        "${CI_API_V4_URL}/projects/vauchi%2Fcontract/repository/files/ci%2Ffetch-screen-catalog.py/raw?ref=5c8409f776e60bc6d0748d46a3a4c93c08516a9d" \
+        -o build/fetch-screen-catalog.py
+      python3 build/fetch-screen-catalog.py build/screen_catalog_v1.json
+    - |
+      CATALOG=build/screen_catalog_v1.json
+      CATALOG_SOURCE="pinned full contract catalog"
       chmod +x target/release/render_catalog
       # Same headless recipe as tests/atspi/run-tests.sh: Cairo renderer
       # (no DRI3 under Xvfb), a private display, a fresh session bus.
@@ -350,16 +318,12 @@ test:screen-catalog:
   artifacts:
     when: always
     paths:
+      - build/screen_catalog_v1.json
+      - build/screen_catalog_v1.provenance.json
       - build/screen-catalog/
     expire_in: 30 days
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      changes:
-        compare_to: refs/heads/$CI_DEFAULT_BRANCH
-        paths:
-          - "src/**/*"
-          - "Cargo.lock"
-          - ".gitlab-ci.yml"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # Manual snapshot regeneration — run via GitLab UI to update baselines.
