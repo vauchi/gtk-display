@@ -28,8 +28,8 @@ mdns = ["dep:mdns-sd"]
 
 [dependencies]
 vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.96.2", version = "^0.96" }
-vauchi-core = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.97.0", version = "=0.97.0", features = ["secure-storage-linux"] }
-vauchi-app = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.97.0", version = "=0.97.0", default-features = false, features = ["network", "content-updates"] }
+vauchi-core = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.98.0", version = "=0.98.0", features = ["secure-storage-linux"] }
+vauchi-app = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.98.0", version = "=0.98.0", default-features = false, features = ["network", "content-updates"] }
 # The Linux hardware shell (ADR-077), pinned by tag like Core; the key keeps
 # the old crate name so the source files that import it are unchanged.
 vauchi-hardware = { package = "vauchi-linux-hw", git = "https://gitlab.com/vauchi/linux-hw.git", tag = "v0.97.1", version = "=0.97.1", optional = true }
