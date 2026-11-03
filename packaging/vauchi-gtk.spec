@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 Name:           vauchi-gtk
-Version:        0.6.0
+Version:        0.6.1
 Release:        1%{?dist}
 Summary:        Privacy-focused updatable contact cards (GTK desktop)
 
@@ -54,6 +54,9 @@ install -Dm 644 data/com.vauchi.desktop.metainfo.xml \
 %{_datadir}/metainfo/com.vauchi.desktop.metainfo.xml
 
 %changelog
+* Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.6.1-1
+- The deb, RPM and AppImage packages build in CI (private#1029)
+
 * Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.6.0-1
 - Hardware through linux-hw's LinuxHardware; fonts from Core's
   presentation tokens; the renderer on the contract (private#1029)

@@ -4,7 +4,7 @@
 
 [package]
 name = "vauchi-gtk"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "Vauchi desktop app for Linux (GTK4 + libadwaita)"

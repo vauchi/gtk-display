@@ -1,3 +1,9 @@
+vauchi-gtk (0.6.1-1) unstable; urgency=medium
+
+  * The deb, RPM and AppImage packages build in CI (private#1029).
+
+ -- Mattia Egloff <mattia.egloff@pm.me>  Tue, 03 Nov 2026 10:42:28 +0100
+
 vauchi-gtk (0.6.0-1) unstable; urgency=medium
 
   * Hardware through linux-hw's LinuxHardware; fonts from Core's
