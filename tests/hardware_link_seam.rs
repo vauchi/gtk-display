@@ -7,7 +7,7 @@
 //! commands.
 use std::cell::RefCell;
 
-use vauchi_core::{Command, Event};
+use vauchi_contract::{Command, Event};
 use vauchi_gtk::core_ui::hardware_link::{HardwareLink, Routed, route};
 
 /// Takes NFC, audio and BLE commands, as linux-hw's ports do.

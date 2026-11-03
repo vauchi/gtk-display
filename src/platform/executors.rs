@@ -11,8 +11,8 @@ use std::sync::{Mutex, MutexGuard, OnceLock, PoisonError};
 use gtk4::glib;
 use libadwaita as adw;
 
-use vauchi_core::Event;
-use vauchi_core::platform::executor::InboxLimits;
+use vauchi_contract::Event;
+use vauchi_contract::executor::InboxLimits;
 
 use crate::core_ui::engine_link::EngineHandle;
 

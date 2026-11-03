@@ -5,7 +5,7 @@
 
 use std::net::TcpListener;
 use std::thread;
-use vauchi_core::DirectEndpoint;
+use vauchi_contract::DirectEndpoint;
 use vauchi_core::exchange::tcp_transport::exchange_payloads;
 use vauchi_gtk::platform::tcp_exchange::execute_exchange;
 

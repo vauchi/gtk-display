@@ -6,7 +6,7 @@
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::time::Duration;
 
-use vauchi_core::DirectEndpoint;
+use vauchi_contract::DirectEndpoint;
 use vauchi_core::exchange::tcp_transport::TcpDirectTransport;
 
 #[cfg(feature = "mdns")]

@@ -14,7 +14,7 @@
 mod common;
 
 use std::process::Command;
-use vauchi_core::{
+use vauchi_contract::{
     AccessibilitySpec, PresentationNode, PresentationTextStyle, PresentationTokens, SurfaceId,
     SurfaceLayout, SurfaceSpec,
 };

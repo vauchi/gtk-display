@@ -7,13 +7,13 @@
 //! must yield the same list of (file stem, command batch) render jobs, and
 //! a `code_id` must never escape the output directory.
 
-use vauchi_app::ui::presentation_contract_fixture_json;
-use vauchi_core::Command;
+use vauchi_contract::Command;
+use vauchi_contract::fixtures::presentation_contract_v1_json;
 use vauchi_gtk::screen_catalog::{CatalogSource, load_screens};
 
 fn batch_json() -> serde_json::Value {
     let contract: serde_json::Value =
-        serde_json::from_str(presentation_contract_fixture_json()).unwrap();
+        serde_json::from_str(presentation_contract_v1_json()).unwrap();
     contract["initial_commands"].clone()
 }
 
@@ -38,15 +38,14 @@ fn load_screens_reads_the_catalog_shape() {
             .commands
             .iter()
             .any(|c| matches!(c, Command::ReplaceSurface { .. })),
-        "commands must decode as vauchi_core::Command, not stay opaque JSON"
+        "commands must decode as vauchi_contract::Command, not stay opaque JSON"
     );
 }
 
 // @internal
 #[test]
 fn load_screens_falls_back_to_the_presentation_contract_batches() {
-    let loaded =
-        load_screens(presentation_contract_fixture_json()).expect("contract shape decodes");
+    let loaded = load_screens(presentation_contract_v1_json()).expect("contract shape decodes");
 
     assert_eq!(loaded.source, CatalogSource::PresentationContract);
     let stems: Vec<&str> = loaded.screens.iter().map(|s| s.code_id.as_str()).collect();

@@ -25,7 +25,7 @@ use gtk4::{Box as GtkBox, Orientation, glib};
 use libadwaita as adw;
 use libadwaita::prelude::*;
 
-use vauchi_core::SurfaceSpec;
+use vauchi_contract::SurfaceSpec;
 use vauchi_gtk::capture::{FRAMES_BEFORE_CAPTURE, MAX_FRAMES_BEFORE_CAPTURE, widget_to_png};
 use vauchi_gtk::core_ui::generic_surface::{OnEvent, render};
 
@@ -34,10 +34,10 @@ use vauchi_gtk::core_ui::generic_surface::{OnEvent, render};
 struct FixtureLink;
 
 impl vauchi_gtk::core_ui::engine_link::EngineLink for FixtureLink {
-    fn dispatch(&self, _: vauchi_core::Event) -> Vec<vauchi_core::Command> {
+    fn dispatch(&self, _: vauchi_contract::Event) -> Vec<vauchi_contract::Command> {
         Vec::new()
     }
-    fn initial_commands(&self) -> Vec<vauchi_core::Command> {
+    fn initial_commands(&self) -> Vec<vauchi_contract::Command> {
         Vec::new()
     }
     fn string(&self, key: &str) -> String {

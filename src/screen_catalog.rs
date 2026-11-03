@@ -9,7 +9,7 @@
 //! same shape (`initial_commands` plus one per step), so both decode to the
 //! same list of render jobs and CI reports which one it drew from.
 
-use vauchi_core::Command;
+use vauchi_contract::Command;
 
 /// Which fixture shape produced the render jobs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

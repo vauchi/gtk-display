@@ -3,7 +3,7 @@
 
 mod common;
 
-use vauchi_core::{
+use vauchi_contract::{
     ActionSpec, ActionTone, Command, ContextBar, Event, InteractionId, MotionPreference,
     NavigationItem, NavigationSpec, OverlayKind, OverlaySpec, PaneLayout, PresentationProfile,
     PresentationTokens, StandardShortcut, SurfaceId, SurfaceLayout, SurfaceSpec, WindowClass,

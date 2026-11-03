@@ -5,7 +5,7 @@
 
 use gtk4::prelude::*;
 use gtk4::{gio, glib};
-use vauchi_core::{NotificationSpec, NotificationUrgency};
+use vauchi_contract::{NotificationSpec, NotificationUrgency};
 
 pub fn install_open_action(
     application: &impl IsA<gio::Application>,

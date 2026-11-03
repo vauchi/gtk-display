@@ -8,7 +8,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use vauchi_core::{Command, Event, SurfaceId};
+use vauchi_contract::{Command, Event, SurfaceId};
 use vauchi_gtk::core_ui::contextual_surface::commands_for_event;
 use vauchi_gtk::core_ui::engine_link::{EngineHandle, EngineLink};
 

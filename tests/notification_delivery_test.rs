@@ -4,7 +4,7 @@
 use gtk4::{gio, glib, prelude::*};
 use std::sync::mpsc;
 use std::time::Duration;
-use vauchi_core::{NotificationSpec, NotificationUrgency};
+use vauchi_contract::{NotificationSpec, NotificationUrgency};
 use vauchi_gtk::platform::notifications::post_notification;
 
 const APP_ID: &str = "app.vauchi.NotificationContract";

@@ -3,7 +3,7 @@
 
 //! Generic presentation-node wire contracts consumed by the GTK renderer.
 
-use vauchi_core::{
+use vauchi_contract::{
     AccessibilitySpec, ActionSpec, ActionTone, BindingId, InteractionId, PresentationNode,
     PresentationRow, PresentationTone,
 };
@@ -43,7 +43,7 @@ fn list_rows_keep_primary_and_secondary_actions_opaque() {
     let original = PresentationNode::List {
         id: BindingId::new("items").expect("binding id"),
         label: Some("Items".into()),
-        style: vauchi_core::PresentationListStyle::Rows,
+        style: vauchi_contract::PresentationListStyle::Rows,
         rows: vec![PresentationRow {
             title: "One".into(),
             subtitle: None,

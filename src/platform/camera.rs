@@ -15,7 +15,7 @@ mod inner {
     use libadwaita::prelude::*;
 
     use vauchi_app::i18n;
-    use vauchi_core::{CameraPurpose, Event};
+    use vauchi_contract::{CameraPurpose, Event};
     use vauchi_hardware::{CameraSession, NokhwaCamera};
 
     use crate::core_ui::engine_link::EngineHandle;

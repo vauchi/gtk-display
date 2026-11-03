@@ -7,7 +7,7 @@
 //! renderer. This wiring moves to linux-app in step 3b.
 use std::cell::RefCell;
 
-use vauchi_core::{Command, Event};
+use vauchi_contract::{Command, Event};
 use vauchi_hardware::LinuxHardware;
 
 use crate::core_ui::hardware_link::HardwareLink;
