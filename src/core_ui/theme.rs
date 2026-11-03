@@ -15,12 +15,22 @@ thread_local! {
     /// One provider, reloaded in place: every surface carries colours, so
     /// adding a provider per render would stack them for the app's lifetime.
     static THEME_PROVIDER: RefCell<Option<(CssProvider, String)>> = const { RefCell::new(None) };
+    static PAINTED_TOKENS: RefCell<Option<PresentationTokens>> = const { RefCell::new(None) };
+}
+
+/// The tokens of the last surface painted. Widgets outside a surface (the
+/// window's content margin, dialogs, overlay items) take their spacing and
+/// touch-target floor from them; the renderer keeps no tokens of its own.
+#[must_use]
+pub fn painted_tokens() -> Option<PresentationTokens> {
+    PAINTED_TOKENS.with(|slot| slot.borrow().clone())
 }
 
 /// Paint the colours and font families Core sends with a surface on the
 /// default display. A surface whose tokens match the last ones painted
 /// costs nothing.
 pub fn apply_tokens(tokens: &PresentationTokens) {
+    PAINTED_TOKENS.with(|slot| *slot.borrow_mut() = Some(tokens.clone()));
     let css = generate_css(&tokens.colors, tokens.fonts.as_ref());
     THEME_PROVIDER.with(|slot| {
         let mut slot = slot.borrow_mut();
