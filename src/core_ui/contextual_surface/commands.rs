@@ -160,8 +160,12 @@ fn render_presentation(
         );
     });
 
-    while let Some(child) = container.first_child() {
-        container.remove(&child);
+    // A single surface clears the container itself, unless it can update
+    // what is shown in place (`generic_surface::render`, private#1062).
+    if surfaces.len() != 1 {
+        while let Some(child) = container.first_child() {
+            container.remove(&child);
+        }
     }
     if surfaces.len() > 1 {
         let panes = GtkBox::new(Orientation::Horizontal, 0);

@@ -5,6 +5,7 @@
 
 mod collections;
 mod controls;
+mod in_place;
 mod targets;
 
 use crate::core_ui::engine_link::EngineHandle;
@@ -27,10 +28,13 @@ use super::accessibility;
 pub type OnEvent = Rc<dyn Fn(Event)>;
 
 pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent, link: &EngineHandle) {
+    crate::core_ui::theme::apply_tokens(&surface.tokens);
+    if in_place::update(container, surface, on_event, link) {
+        return;
+    }
     while let Some(child) = container.first_child() {
         container.remove(&child);
     }
-    crate::core_ui::theme::apply_tokens(&surface.tokens);
     apply_target_radius(&surface.tokens);
     let scrolled = gtk4::ScrolledWindow::builder()
         .vexpand(true)
@@ -61,25 +65,26 @@ pub fn render(container: &GtkBox, surface: &SurfaceSpec, on_event: &OnEvent, lin
         .build();
     title.set_widget_name("screen_title");
     inner.append(&title);
-    if let Some(subtitle) = &surface.subtitle {
-        inner.append(
-            &Label::builder()
-                .label(subtitle)
-                .css_classes(["dim-label"])
-                .halign(gtk4::Align::Start)
-                .wrap(true)
-                .build(),
-        );
-    }
-    for node in &surface.nodes {
-        inner.append(&render_node(
-            node,
-            &surface.surface_id,
-            on_event,
-            link,
-            &surface.tokens,
-        ));
-    }
+    let subtitle = surface.subtitle.as_ref().map(|subtitle| {
+        let label = Label::builder()
+            .label(subtitle)
+            .css_classes(["dim-label"])
+            .halign(gtk4::Align::Start)
+            .wrap(true)
+            .build();
+        inner.append(&label);
+        label
+    });
+    let nodes = surface
+        .nodes
+        .iter()
+        .map(|node| {
+            let widget = render_node(node, &surface.surface_id, on_event, link, &surface.tokens);
+            inner.append(&widget);
+            widget
+        })
+        .collect();
+    in_place::remember(container, surface, inner, title, subtitle, nodes);
 }
 
 /// Applies Core's per-surface corner radius as a CSS rule any widget can
