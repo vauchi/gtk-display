@@ -707,3 +707,32 @@ fn an_information_overlay_crossfades_under_either_motion_preference() {
         GtkOverlayTransition::ActionCrossfade,
     );
 }
+
+// A keystroke's SurfaceActivated answers with the profile already applied;
+// re-rendering for it rebuilt the focused entry from the previous value,
+// before Core's echo of the new one arrived (vauchi/private#1062).
+// @scenario: generic_presentation_protocol.feature :: Responsive transitions preserve interaction state
+#[test]
+fn an_unchanged_presentation_profile_is_not_applied_again() {
+    let mut state = GtkPresentationState::default();
+    let profile = PresentationProfile {
+        window_class: WindowClass::Compact,
+        pane_layout: PaneLayout::Single,
+        primary_surface: surface("onboarding"),
+        detail_surface: None,
+        active_surface: surface("onboarding"),
+    };
+
+    assert!(state.apply(Command::SetPresentationProfile {
+        profile: profile.clone(),
+    }));
+    assert!(!state.apply(Command::SetPresentationProfile {
+        profile: profile.clone(),
+    }));
+    assert!(state.apply(Command::SetPresentationProfile {
+        profile: PresentationProfile {
+            window_class: WindowClass::Expanded,
+            ..profile
+        },
+    }));
+}
