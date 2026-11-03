@@ -170,6 +170,22 @@ test:unit:
           - "rust-toolchain.toml"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+# The renderer replays the contract's fixture corpus on every MR, with no
+# engine behind it (ADR-078 D-11).
+contract:replay:
+  extends: [.linux-runner, .timeout-cold-rebuild]
+  stage: test
+  needs:
+    - job: lint:format
+      optional: true
+  before_script:
+    - !reference [.self-hosted, before_script]
+  script:
+    - cargo nextest run --profile ci --test contract_replay
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
 # AT-SPI accessibility + widget tree tests
 test:a11y:
   stage: test

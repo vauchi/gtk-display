@@ -3,10 +3,8 @@
 
 //! Contracts for GTK's canonical generic presentation input.
 
-use vauchi_app::ui::{AppEngine, presentation_contract_fixture_json};
+use vauchi_app::ui::AppEngine;
 use vauchi_core::{Command, Event, api::Vauchi};
-
-use vauchi_gtk::core_ui::contextual_surface::GtkPresentationState;
 
 fn initial_batch() -> (AppEngine, Vec<Command>) {
     let mut engine = AppEngine::new(Vauchi::in_memory().expect("in-memory Core"));
@@ -100,37 +98,4 @@ fn an_opaque_visible_action_round_trips_through_the_reducer() {
         next.first(),
         Some(Command::ReplaceSurface { surface }) if surface.revision == 2
     ));
-}
-
-// @scenario: generic_presentation_protocol.feature :: Every shell renders the same prepared presentation
-#[test]
-fn shared_presentation_contract_reaches_the_expected_gtk_state() {
-    let fixture: serde_json::Value =
-        serde_json::from_str(presentation_contract_fixture_json()).expect("shared fixture");
-    assert_eq!(fixture["schema_version"], 1);
-    let initial_commands: Vec<Command> =
-        serde_json::from_value(fixture["initial_commands"].clone()).expect("initial commands");
-
-    let mut state = GtkPresentationState::default();
-    for command in initial_commands {
-        assert!(state.apply(command), "fixture command must be accepted");
-    }
-    for step in fixture["steps"].as_array().expect("fixture steps") {
-        let _: Event = serde_json::from_value(step["event"].clone()).expect("fixture event");
-        let commands: Vec<Command> =
-            serde_json::from_value(step["commands"].clone()).expect("fixture commands");
-        for command in commands {
-            assert!(state.apply(command), "fixture command must be accepted");
-        }
-    }
-
-    let surface = state.surface().expect("visible GTK surface");
-    let (_, context_bar) = state.context_bar().expect("visible GTK context bar");
-    let actual = serde_json::json!({
-        "active_surface_id": surface.surface_id,
-        "surface": surface,
-        "context_bar": context_bar,
-    });
-
-    assert_eq!(actual, fixture["expected_state"]);
 }
