@@ -159,6 +159,10 @@ build:app:
           # vauchi/private#490).
           - "src/**/*"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # A release tag builds too: package:appimage packs this job's gvauchi,
+    # and without it the v0.6.1 tag pipeline failed ("cannot stat
+    # target/release/gvauchi"), cancelling deb and rpm with it.
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
 test:unit:
   extends: [.linux-runner, .timeout-cold-rebuild]
