@@ -556,6 +556,7 @@ package:deb:
     - apt-get update -qq
     - apt-get install -y -qq devscripts debhelper
         libgtk-4-dev libadwaita-1-dev libqrencode-dev pkg-config
+        libasound2-dev libdbus-1-dev libclang-dev libfontconfig1-dev
   script:
     # -d: debian/control's Build-Depends name Debian's cargo and rustc,
     # which this image replaces with the pinned toolchain.
@@ -583,7 +584,8 @@ package:rpm:
       optional: true
   before_script:
     - dnf install -y rpm-build cargo rust gtk4-devel libadwaita-devel
-        qrencode-devel pkgconfig
+        qrencode-devel pkgconfig alsa-lib-devel dbus-devel clang-devel
+        fontconfig-devel
   script:
     - mkdir -p rpmbuild/{SOURCES,SPECS}
     - tar czf rpmbuild/SOURCES/vauchi-gtk-0.6.0.tar.gz
@@ -615,6 +617,8 @@ package:flatpak:
   script:
     # The image has the GNOME SDK but not the rust-stable extension the
     # manifest names; flatpak-builder installs missing deps from Flathub.
+    - flatpak remote-add --user --if-not-exists flathub
+        https://dl.flathub.org/repo/flathub.flatpakrepo
     - flatpak-builder --user --install-deps-from=flathub --force-clean
         --repo=repo build packaging/com.vauchi.desktop.yml
     - flatpak build-bundle repo vauchi-gtk.flatpak com.vauchi.desktop

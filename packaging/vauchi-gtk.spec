@@ -13,6 +13,10 @@ Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  cargo
 BuildRequires:  rust
 BuildRequires:  gtk4-devel
+BuildRequires:  alsa-lib-devel
+BuildRequires:  dbus-devel
+BuildRequires:  clang-devel
+BuildRequires:  fontconfig-devel
 BuildRequires:  libadwaita-devel
 BuildRequires:  qrencode-devel
 BuildRequires:  pkgconfig
@@ -54,5 +58,5 @@ install -Dm 644 data/com.vauchi.desktop.metainfo.xml \
 - Hardware through linux-hw's LinuxHardware; fonts from Core's
   presentation tokens; the renderer on the contract (private#1029)
 
-* Sat Mar 29 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.5.0-1
+* Sun Mar 29 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.5.0-1
 - Initial packaging of vauchi-gtk for Fedora/RHEL
