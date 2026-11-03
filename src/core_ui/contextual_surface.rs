@@ -188,6 +188,9 @@ impl GtkPresentationState {
                 true
             }
             Command::SetPresentationProfile { profile } => {
+                if self.profile.as_ref() == Some(&profile) {
+                    return false;
+                }
                 self.profile = Some(profile);
                 true
             }
