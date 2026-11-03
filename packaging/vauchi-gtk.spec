@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 Name:           vauchi-gtk
-Version:        0.6.2
+Version:        0.7.0
 Release:        1%{?dist}
 Summary:        Privacy-focused updatable contact cards (GTK desktop)
 
@@ -54,6 +54,10 @@ install -Dm 644 data/com.vauchi.desktop.metainfo.xml \
 %{_datadir}/metainfo/com.vauchi.desktop.metainfo.xml
 
 %changelog
+* Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.7.0-1
+- The GTK application is shell::run(start_engine, start_hardware); the
+  engine link reports invalidations (private#1029)
+
 * Tue Nov 03 2026 Mattia Egloff <mattia.egloff@pm.me> - 0.6.2-1
 - Release tags build the app, so the AppImage job has a binary to pack
   (private#1029)
