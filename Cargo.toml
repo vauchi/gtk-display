@@ -10,12 +10,11 @@ license = "GPL-3.0-or-later"
 description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
 [features]
-default = ["audio", "ble", "camera", "mdns"]
+default = ["audio", "ble", "camera"]
 audio = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/audio"]
 ble = ["dep:bluer", "dep:tokio", "dep:vauchi-hardware"]
 camera = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/camera"]
 nfc = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/nfc"]
-mdns = ["dep:mdns-sd"]
 
 [dependencies]
 vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.97.0", version = "^0.97" }
@@ -44,7 +43,6 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"], optio
 # NFC exchange via PC/SC (pcsclite) — optional, requires USB NFC reader
 
 # mDNS/DNS-SD discovery for USB exchange (finds phone IP on local network)
-mdns-sd = { version = "0.11", optional = true }
 
 # Linux-only deps: `bluer` (BlueZ D-Bus, optional) and `nokhwa` with the
 # `input-v4l` feature (Video4Linux). Target-gating keeps `cargo clippy`

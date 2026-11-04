@@ -18,4 +18,3 @@ pub mod header_bar;
 pub mod linux_hardware_link;
 pub mod notifications;
 pub mod screen_capture_protection;
-pub mod tcp_exchange;

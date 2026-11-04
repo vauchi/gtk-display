@@ -45,6 +45,7 @@ pub fn ported(command: &Command) -> bool {
             | Command::AudioStop
             | Command::CameraCapture { .. }
             | Command::CameraStop { .. }
+            | Command::DirectSend { .. }
     )
 }
 

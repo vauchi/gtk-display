@@ -125,22 +125,6 @@ pub(crate) fn handle_exchange_commands(
                 );
             }
 
-            // ── USB / TCP direct exchange ────────────────────────────
-            Command::DirectSend {
-                payload,
-                is_initiator,
-                endpoint,
-            } => {
-                execute_direct_send(
-                    container,
-                    app_engine,
-                    toast_overlay,
-                    payload.clone(),
-                    *is_initiator,
-                    endpoint.clone(),
-                );
-            }
-
             // Phase 2b screen-presentation lifecycle commands. Linux
             // desktop has no programmatic brightness control (the user
             // owns it via system settings) and the OS-level idle timer
@@ -242,61 +226,6 @@ fn dispatch_unavailable(
             transport: transport.to_string(),
         },
     );
-}
-
-/// Execute a direct (USB/TCP) payload exchange on a background thread.
-///
-/// TCP is blocking — spawning a thread prevents stalling the GTK main loop.
-/// Results are polled via `glib::timeout_add_local` and dispatched back
-/// to the engine as `Event`.
-fn execute_direct_send(
-    container: &GtkBox,
-    app_engine: &EngineHandle,
-    toast_overlay: &adw::ToastOverlay,
-    payload: Vec<u8>,
-    is_initiator: bool,
-    endpoint: vauchi_contract::DirectEndpoint,
-) {
-    use std::sync::mpsc;
-
-    let container = container.clone();
-    let app_engine = app_engine.clone();
-    let toast_overlay = toast_overlay.clone();
-    let (tx, rx) = mpsc::channel::<Result<Vec<u8>, String>>();
-
-    std::thread::spawn(move || {
-        let result =
-            crate::platform::tcp_exchange::execute_exchange(&endpoint, &payload, is_initiator);
-        tx.send(result).ok();
-    });
-
-    gtk4::glib::timeout_add_local(std::time::Duration::from_millis(100), move || {
-        match rx.try_recv() {
-            Ok(Ok(data)) => {
-                dispatch_platform_event(
-                    &container,
-                    &app_engine,
-                    &toast_overlay,
-                    Event::DirectPayloadReceived { data },
-                );
-                gtk4::glib::ControlFlow::Break
-            }
-            Ok(Err(err)) => {
-                dispatch_platform_event(
-                    &container,
-                    &app_engine,
-                    &toast_overlay,
-                    Event::HardwareError {
-                        transport: "USB".into(),
-                        error: err,
-                    },
-                );
-                gtk4::glib::ControlFlow::Break
-            }
-            Err(mpsc::TryRecvError::Empty) => gtk4::glib::ControlFlow::Continue,
-            Err(mpsc::TryRecvError::Disconnected) => gtk4::glib::ControlFlow::Break,
-        }
-    });
 }
 
 /// Try camera-based QR scanning if available, otherwise fall back to paste dialog.
