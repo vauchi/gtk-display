@@ -127,6 +127,7 @@ fn dismiss_overlay_closes_the_open_overlay() {
         primary_surface: surface("contacts"),
         detail_surface: None,
         active_surface: surface("contacts"),
+        window_title: None,
     };
     let overlay = OverlaySpec {
         kind: OverlayKind::Navigation,
@@ -178,6 +179,7 @@ fn command_state_keeps_core_bar_profile_and_overlay_data_opaque() {
         primary_surface: surface("contacts"),
         detail_surface: None,
         active_surface: surface("contacts"),
+        window_title: None,
     };
     let overlay = OverlaySpec {
         kind: OverlayKind::Navigation,
@@ -290,6 +292,7 @@ fn command_state_retains_both_panes_and_selects_context_from_active_surface() {
             primary_surface: surface("contacts"),
             detail_surface: Some(surface("contact_detail")),
             active_surface: surface("contact_detail"),
+            window_title: None,
         },
     }));
 
@@ -317,6 +320,7 @@ fn command_state_retains_both_panes_and_selects_context_from_active_surface() {
             primary_surface: surface("contacts"),
             detail_surface: Some(surface("contact_detail")),
             active_surface: surface("contacts"),
+            window_title: None,
         },
     }));
     assert_eq!(
@@ -341,6 +345,7 @@ fn collapsing_to_one_pane_preserves_the_hidden_surface_for_reexpansion() {
             primary_surface: surface("contacts"),
             detail_surface: Some(surface("contact_detail")),
             active_surface: surface("contact_detail"),
+            window_title: None,
         },
     });
 
@@ -354,6 +359,7 @@ fn collapsing_to_one_pane_preserves_the_hidden_surface_for_reexpansion() {
             primary_surface: surface("contacts"),
             detail_surface: Some(surface("contact_detail")),
             active_surface: surface("contact_detail"),
+            window_title: None,
         },
     });
     assert_eq!(
@@ -720,6 +726,7 @@ fn an_unchanged_presentation_profile_is_not_applied_again() {
         primary_surface: surface("onboarding"),
         detail_surface: None,
         active_surface: surface("onboarding"),
+        window_title: None,
     };
 
     assert!(state.apply(Command::SetPresentationProfile {

@@ -60,6 +60,7 @@ fn list_rows_keep_primary_and_secondary_actions_opaque() {
             info: None,
         }],
         searchable: false,
+        search_placeholder: None,
         paging: None,
         accessibility: AccessibilitySpec::label("Items"),
     };
