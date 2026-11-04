@@ -11,10 +11,10 @@ description = "GTK4 + libadwaita renderer for Vauchi's generic presentation comm
 
 [features]
 default = ["audio", "ble", "camera"]
-audio = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/audio"]
-ble = ["dep:bluer", "dep:tokio", "dep:vauchi-hardware"]
-camera = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/camera"]
-nfc = ["dep:tokio", "dep:vauchi-hardware", "vauchi-hardware/nfc"]
+audio = ["dep:vauchi-hardware", "vauchi-hardware/audio"]
+ble = ["dep:vauchi-hardware"]
+camera = ["dep:vauchi-hardware", "vauchi-hardware/camera"]
+nfc = ["dep:vauchi-hardware", "vauchi-hardware/nfc"]
 
 [dependencies]
 vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.97.2", version = "^0.97" }
@@ -32,25 +32,8 @@ serde_json = "1"
 # so the brand type ramp renders without installing the fonts system-wide.
 yeslogic-fontconfig-sys = "6"
 
-# Audio proximity (ultrasonic via CPAL) — enabled by default
-# Uses CpalAudioBackend from vauchi-core
-
-# BLE exchange — tokio runtime is portable; bluer itself is target-gated below.
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"], optional = true }
-
-# Camera QR scanning — nokhwa is target-gated below; decoding lives in core.
-
-# NFC exchange via PC/SC (pcsclite) — optional, requires USB NFC reader
-
-# Linux-only deps: `bluer` (BlueZ D-Bus, optional) and `nokhwa` with the
-# `input-v4l` feature (Video4Linux). Target-gating keeps `cargo clippy`
-# green on non-Linux dev machines without dropping `ble`/`camera` from
-# the default build on Linux.
-[target.'cfg(target_os = "linux")'.dependencies]
-bluer = { version = "0.17", features = ["bluetoothd"], optional = true }
-
 [package.metadata.cargo-machete]
-ignored = ["nokhwa", "pcsc", "yeslogic-fontconfig-sys"]  # optional feature deps; fontconfig-sys is used as `fontconfig_sys`
+ignored = ["yeslogic-fontconfig-sys"]  # imported as `fontconfig_sys`
 
 [build-dependencies]
 # Compiles data/resources.gresource.xml (the bundled pictograms) into the
