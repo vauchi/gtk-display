@@ -151,7 +151,6 @@ fn build_ui(app: &adw::Application) {
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .title(engine_handle.string("app.name"))
         .default_width(700)
         .default_height(600)
         .content(&root)

@@ -6,13 +6,12 @@ use gtk4::prelude::*;
 use gtk4::{Box as GtkBox, Button, Orientation};
 use libadwaita as adw;
 use libadwaita::prelude::MessageDialogExt as _;
-use std::borrow::Cow;
 use std::cell::Cell;
 use std::rc::Rc;
 
 use vauchi_contract::{Event, MotionPreference, OverlayKind, OverlaySpec, SurfaceId};
 
-use crate::core_ui::engine_link::{EngineHandle, EngineLink};
+use crate::core_ui::engine_link::EngineHandle;
 
 use crate::core_ui::navigation_icons::resolve_icon_name;
 
@@ -68,7 +67,7 @@ fn present_information(
         .build();
     dialog.set_transient_for(parent.as_ref());
     dialog.add_css_class("information-panel");
-    dialog.add_response("close", &close_label(&overlay, app_engine.as_ref()));
+    dialog.add_response("close", close_label(&overlay));
     dialog.set_default_response(Some("close"));
     dialog.set_close_response("close");
 
@@ -91,13 +90,15 @@ fn present_information(
 }
 
 /// Core's own wording for the overlay's way out when it sent one
-/// (vauchi/private#515); the shell's locale word otherwise, so an older
-/// Core that omits `close_label` sees the text it always has.
-fn close_label<'a>(overlay: &'a OverlaySpec, link: &dyn EngineLink) -> Cow<'a, str> {
+/// (vauchi/private#515). Core fills it for every overlay; without one the
+/// overlay's title names the way out, and the renderer picks no word of
+/// its own (ADR-066, contract `OverlaySpec::close_label`).
+fn close_label(overlay: &OverlaySpec) -> &str {
     overlay
         .close_label
         .as_deref()
-        .map_or_else(|| Cow::Owned(link.string("action.close")), Cow::Borrowed)
+        .or(overlay.title.as_deref())
+        .unwrap_or_default()
 }
 
 fn present_navigation(
@@ -367,49 +368,22 @@ mod close_label_tests {
     fn overlay(close_label: Option<&str>) -> OverlaySpec {
         OverlaySpec {
             kind: OverlayKind::Information,
-            title: None,
+            title: Some("Menu".to_owned()),
             items: Vec::new(),
             body: None,
             close_label: close_label.map(str::to_owned),
         }
     }
 
-    use crate::core_ui::engine_link::EngineLink;
-
-    /// A link whose every string is its key in brackets.
-    struct KeyLink;
-
-    impl EngineLink for KeyLink {
-        fn dispatch(&self, _: vauchi_contract::Event) -> Vec<vauchi_contract::Command> {
-            Vec::new()
-        }
-        fn initial_commands(&self) -> Vec<vauchi_contract::Command> {
-            Vec::new()
-        }
-        fn string(&self, key: &str) -> String {
-            format!("[{key}]")
-        }
-        fn string_with_args(&self, key: &str, _: &[(&str, &str)]) -> String {
-            format!("[{key}]")
-        }
-
-        fn take_invalidation(&self) -> bool {
-            false
-        }
-    }
-
     // @internal
     #[test]
     fn cores_close_label_wins_when_it_sends_one() {
-        assert_eq!(
-            close_label(&overlay(Some("Schließen")), &KeyLink),
-            "Schließen"
-        );
+        assert_eq!(close_label(&overlay(Some("Schließen"))), "Schließen");
     }
 
     // @internal
     #[test]
-    fn an_older_core_with_no_close_label_takes_the_links_word() {
-        assert_eq!(close_label(&overlay(None), &KeyLink), "[action.close]");
+    fn an_older_core_with_no_close_label_names_it_by_the_title() {
+        assert_eq!(close_label(&overlay(None)), "Menu");
     }
 }

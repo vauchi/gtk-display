@@ -265,6 +265,7 @@ pub(super) fn render(
             rows,
             searchable,
             accessibility,
+            search_placeholder,
             ..
         } => {
             let group = GtkBox::new(Orientation::Vertical, 4);
@@ -279,11 +280,11 @@ pub(super) fn render(
                 );
             }
             if *searchable {
-                group.append(
-                    &gtk4::SearchEntry::builder()
-                        .placeholder_text(link.string("action.search"))
-                        .build(),
-                );
+                let search = gtk4::SearchEntry::new();
+                if let Some(placeholder) = search_placeholder {
+                    search.set_placeholder_text(Some(placeholder));
+                }
+                group.append(&search);
             }
             for row in rows {
                 group.append(&render_row(row, surface_id, on_event, link, tokens));
@@ -371,6 +372,8 @@ pub(super) fn render(
             accessibility,
             placement,
             error_correction,
+            capture_placeholder,
+            capture_submit_label,
             ..
         } => {
             let group = GtkBox::new(Orientation::Vertical, 4);
@@ -388,7 +391,16 @@ pub(super) fn render(
                     }
                 }
                 PresentationQrPurpose::Capture => {
-                    group.append(&render_qr_capture(id, surface_id, on_event, link));
+                    group.append(&render_qr_capture(
+                        id,
+                        surface_id,
+                        on_event,
+                        QrCaptureCopy {
+                            placeholder: capture_placeholder.as_deref(),
+                            submit_label: capture_submit_label.as_deref(),
+                            accessible_name: &accessibility.label,
+                        },
+                    ));
                 }
             }
             if let Some(label) = label {
@@ -453,19 +465,35 @@ fn render_qr(
     drawing
 }
 
+/// The copy Core prepared for a QR capture (contract v0.97.0). Without a
+/// submit label the button is an icon named by the node's accessibility
+/// label, so the renderer picks no word of its own (ADR-066).
+struct QrCaptureCopy<'a> {
+    placeholder: Option<&'a str>,
+    submit_label: Option<&'a str>,
+    accessible_name: &'a str,
+}
+
 fn render_qr_capture(
     id: &BindingId,
     surface_id: &SurfaceId,
     on_event: &OnEvent,
-    link: &EngineHandle,
+    copy: QrCaptureCopy<'_>,
 ) -> GtkBox {
     let row = GtkBox::new(Orientation::Horizontal, 8);
-    let entry = Entry::builder()
-        .placeholder_text(link.string("platform.qr_paste_placeholder"))
-        .hexpand(true)
-        .build();
+    let entry = Entry::builder().hexpand(true).build();
+    if let Some(placeholder) = copy.placeholder {
+        entry.set_placeholder_text(Some(placeholder));
+    }
     entry.set_widget_name(id.as_str());
-    let button = Button::with_label(&link.string("platform.qr_submit"));
+    let button = match copy.submit_label {
+        Some(label) => Button::with_label(label),
+        None => {
+            let button = Button::from_icon_name("object-select-symbolic");
+            crate::core_ui::accessibility::apply_label(&button, copy.accessible_name);
+            button
+        }
+    };
     let entry_for_submit = entry.clone();
     let id = id.clone();
     let surface = surface_id.clone();

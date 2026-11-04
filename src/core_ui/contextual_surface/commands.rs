@@ -60,6 +60,9 @@ pub(crate) fn handle_commands(
             } => pending_overlay = Some((surface_id, overlay)),
             Command::SetPresentationProfile { profile } => {
                 environment::apply_window_class(container, profile.window_class);
+                if let Some(title) = &profile.window_title {
+                    set_window_title(container, title);
+                }
                 presentation_changed = true;
             }
             Command::SetContextBar { .. } => presentation_changed = true,
@@ -323,4 +326,10 @@ fn set_content_margin(container: &GtkBox, margin: i32) {
     container.set_margin_bottom(margin);
     container.set_margin_start(margin);
     container.set_margin_end(margin);
+}
+
+fn set_window_title(container: &GtkBox, title: &str) {
+    if let Some(window) = container.root().and_downcast::<gtk4::Window>() {
+        window.set_title(Some(title));
+    }
 }
