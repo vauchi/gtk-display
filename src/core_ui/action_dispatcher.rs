@@ -3,8 +3,9 @@
 
 //! Executes platform commands from the Core reducer.
 //!
-//! Handles navigation, alerts, toasts, hardware command dispatch (BLE, NFC,
-//! audio, camera), and QR paste fallback.
+//! Handles navigation, alerts, toasts and, when no hardware shell is
+//! attached, reports each hardware command's transport as unavailable;
+//! Core then decides what the user sees (ADR-066, private#1029).
 
 mod file_picker;
 
@@ -16,7 +17,6 @@ use std::collections::HashSet;
 use vauchi_contract::{Command, Event};
 
 use crate::core_ui::engine_link::EngineHandle;
-use crate::platform::hardware;
 
 use super::contextual_surface::dispatch_platform_event;
 
@@ -45,8 +45,12 @@ pub(crate) fn handle_exchange_commands(
                 // The paired ReplaceSurface command already carries the
                 // updated generic QR node.
             }
+            // linux-hw scans when it is attached (Core routes the scan to
+            // it); here none is. "Camera" is the name the old in-shell
+            // camera reported, which Core answers with a toast and does not
+            // treat as a failed exchange.
             Command::QrRequestScan => {
-                scan_or_paste_qr(container, app_engine, toast_overlay);
+                dispatch_unavailable(container, app_engine, toast_overlay, "Camera");
             }
 
             // ── Hardware ports (BLE, NFC, audio) ─────────────────────
@@ -56,7 +60,7 @@ pub(crate) fn handle_exchange_commands(
             // start — and Core then learns the transport is unavailable.
             Command::AudioEmitChallenge { .. } | Command::AudioListenForResponse { .. } => {
                 if notified_unavailable.insert("audio") {
-                    report_hardware_unavailable(container, app_engine, toast_overlay, "Audio");
+                    dispatch_unavailable(container, app_engine, toast_overlay, "Audio");
                 }
             }
             Command::BleStartScanning { .. }
@@ -65,12 +69,12 @@ pub(crate) fn handle_exchange_commands(
             | Command::BleWriteCharacteristic { .. }
             | Command::BleReadCharacteristic { .. } => {
                 if notified_unavailable.insert("ble") {
-                    report_hardware_unavailable(container, app_engine, toast_overlay, "BLE");
+                    dispatch_unavailable(container, app_engine, toast_overlay, "BLE");
                 }
             }
             Command::NfcActivate { .. } | Command::NfcSendApdu { .. } => {
                 if notified_unavailable.insert("nfc") {
-                    report_hardware_unavailable(container, app_engine, toast_overlay, "NFC");
+                    dispatch_unavailable(container, app_engine, toast_overlay, "NFC");
                 }
             }
             Command::AudioStop
@@ -193,25 +197,6 @@ fn post_notification(container: &GtkBox, notification: &vauchi_contract::Notific
     crate::platform::notifications::post_notification(&application, notification);
 }
 
-/// Report a hardware transport as unavailable — sends `HardwareUnavailable` back
-/// to core so the ExchangeSession can trigger transport fallback, and shows a
-/// toast to the user.
-fn report_hardware_unavailable(
-    container: &GtkBox,
-    app_engine: &EngineHandle,
-    toast_overlay: &adw::ToastOverlay,
-    transport: &str,
-) {
-    let msg = app_engine.string_with_args(
-        "platform.hardware_not_available",
-        &[("transport", transport)],
-    );
-    let toast = adw::Toast::new(&msg);
-    toast_overlay.add_toast(toast);
-
-    dispatch_unavailable(container, app_engine, toast_overlay, transport);
-}
-
 fn dispatch_unavailable(
     container: &GtkBox,
     app_engine: &EngineHandle,
@@ -228,105 +213,6 @@ fn dispatch_unavailable(
     );
 }
 
-/// Try camera-based QR scanning if available, otherwise fall back to paste dialog.
-fn scan_or_paste_qr(
-    container: &GtkBox,
-    app_engine: &EngineHandle,
-    toast_overlay: &adw::ToastOverlay,
-) {
-    #[cfg(all(feature = "camera", target_os = "linux"))]
-    {
-        if hardware::has_camera() {
-            crate::platform::camera::scan_qr(container, app_engine, toast_overlay);
-            return;
-        }
-    }
-    // No camera or feature not enabled — fall back to paste dialog
-    show_qr_paste_dialog(container, app_engine, toast_overlay);
-}
-
-/// Show a dialog for manually pasting QR code data.
-///
-/// This is the desktop fallback for camera-based QR scanning. The user can:
-/// 1. Scan the QR with their phone's camera app
-/// 2. Copy the QR data string
-/// 3. Paste it into this dialog
-///
-/// On confirm, the data reaches the engine link as a `QrScanned` hardware event.
-fn show_qr_paste_dialog(
-    container: &GtkBox,
-    app_engine: &EngineHandle,
-    toast_overlay: &adw::ToastOverlay,
-) {
-    let window = match container
-        .root()
-        .and_then(|r| r.downcast::<gtk4::Window>().ok())
-    {
-        Some(w) => w,
-        None => return,
-    };
-
-    let body = if hardware::has_camera() {
-        app_engine.string("platform.qr_camera_not_available")
-    } else {
-        app_engine.string("platform.qr_no_camera")
-    };
-    let title = app_engine.string("platform.qr_paste_dialog_title");
-
-    let dialog = adw::MessageDialog::new(Some(&window), Some(&title), Some(&body));
-
-    // Text entry for pasting QR data
-    let placeholder = app_engine.string("platform.qr_paste_placeholder");
-    let margin =
-        crate::core_ui::theme::painted_tokens().map_or(0, |tokens| i32::from(tokens.spacing_large));
-    let entry = gtk4::Entry::builder()
-        .placeholder_text(&placeholder)
-        .hexpand(true)
-        .margin_start(margin)
-        .margin_end(margin)
-        .build();
-    dialog.set_extra_child(Some(&entry));
-
-    let cancel_label = app_engine.string("platform.button_cancel");
-    let confirm_label = app_engine.string("platform.button_confirm");
-    dialog.add_response("cancel", &cancel_label);
-    dialog.add_response("confirm", &confirm_label);
-    dialog.set_response_appearance("confirm", adw::ResponseAppearance::Suggested);
-    dialog.set_default_response(Some("confirm"));
-    dialog.set_close_response("cancel");
-
-    let app_engine = app_engine.clone();
-    let toast_overlay = toast_overlay.clone();
-    let container = container.clone();
-    dialog.connect_response(None, move |dlg, response| {
-        if response == "confirm" {
-            // Get text from the entry widget inside the dialog
-            if let Some(extra) = dlg.extra_child()
-                && let Ok(entry) = extra.downcast::<gtk4::Entry>()
-            {
-                let data = entry.text().to_string();
-                if data.trim().is_empty() {
-                    let msg = app_engine.string("platform.error_no_qr_data");
-                    let toast = adw::Toast::new(&msg);
-                    toast_overlay.add_toast(toast);
-                    return;
-                }
-
-                // Forward to core as a hardware event
-                dispatch_platform_event(
-                    &container,
-                    &app_engine,
-                    &toast_overlay,
-                    Event::QrScanned { data },
-                );
-            }
-        }
-    });
-
-    dialog.present();
-}
-
-/// Show a modal alert using adw::MessageDialog.
 pub(crate) fn show_alert(container: &GtkBox, title: &str, message: &str) {
     if let Some(window) = container
         .root()

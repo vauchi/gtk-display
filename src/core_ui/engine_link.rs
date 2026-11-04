@@ -9,7 +9,8 @@ use std::rc::Rc;
 
 use vauchi_contract::{Command, Event};
 
-/// What the shell asks of the engine, and nothing more.
+/// What the shell asks of the engine, and nothing more. No copy: Core
+/// puts every word the renderer shows into the commands (ADR-066).
 pub trait EngineLink {
     /// Core's answer to one event: the batch to apply. A rejected event
     /// yields the alert batch Core prepares for it, so the shell applies
@@ -18,13 +19,6 @@ pub trait EngineLink {
 
     /// The batch that boots the shell.
     fn initial_commands(&self) -> Vec<Command>;
-
-    /// The shell's own chrome text (a cancel button, a placeholder) by
-    /// key, at the engine's locale: label text comes from Core's locale
-    /// store, never from the shell.
-    fn string(&self, key: &str) -> String;
-
-    fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String;
 
     /// Whether Core invalidated the presentation since the last call; the
     /// shell polls this and repaints the current surface when it is true.

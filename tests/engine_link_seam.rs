@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! The renderer talks to the engine through `EngineLink` alone (ADR-078
 //! step 4, D-2): any link serves, and no file of the renderer names the
-//! engine's type, and no file resolves strings itself: the link answers
-//! `string(key)` at the engine's locale. The app's `RefCell<AppEngine>` is
-//! one link among others.
+//! engine's type or asks it for copy: Core sends every word in the
+//! commands. The app's `RefCell<AppEngine>` is one link among others.
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -25,15 +24,6 @@ impl EngineLink for RecordingLink {
 
     fn initial_commands(&self) -> Vec<Command> {
         self.answer.clone()
-    }
-
-    fn string(&self, key: &str) -> String {
-        format!("[{key}]")
-    }
-
-    fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String {
-        let args: Vec<String> = args.iter().map(|(k, v)| format!("{k}={v}")).collect();
-        format!("[{key} {}]", args.join(","))
     }
 
     fn take_invalidation(&self) -> bool {
@@ -61,23 +51,6 @@ fn a_shell_event_reaches_whatever_link_the_app_gave_and_its_answer_comes_back() 
         vec![Event::SurfaceActivated {
             surface_id: SurfaceId::new("contacts").expect("a valid surface id")
         }]
-    );
-}
-
-// @scenario: generic_presentation_protocol.feature :: Invalid boundary input fails safely
-#[test]
-fn the_shells_own_strings_come_through_the_link_at_the_engines_locale() {
-    let link: EngineHandle = Rc::new(RecordingLink {
-        events: RefCell::new(Vec::new()),
-        answer: Vec::new(),
-    });
-    assert_eq!(
-        link.string("platform.button_cancel"),
-        "[platform.button_cancel]"
-    );
-    assert_eq!(
-        link.string_with_args("platform.camera_error", &[("error", "busy")]),
-        "[platform.camera_error error=busy]"
     );
 }
 

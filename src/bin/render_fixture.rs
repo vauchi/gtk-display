@@ -29,8 +29,8 @@ use vauchi_contract::SurfaceSpec;
 use vauchi_gtk::capture::{FRAMES_BEFORE_CAPTURE, MAX_FRAMES_BEFORE_CAPTURE, widget_to_png};
 use vauchi_gtk::core_ui::generic_surface::{OnEvent, render};
 
-/// The fixture harness has no engine: strings come from the locale store
-/// at the detected locale, as the app's link would answer.
+/// The fixture harness has no engine; the surface it renders carries all
+/// its copy.
 struct FixtureLink;
 
 impl vauchi_gtk::core_ui::engine_link::EngineLink for FixtureLink {
@@ -39,12 +39,6 @@ impl vauchi_gtk::core_ui::engine_link::EngineLink for FixtureLink {
     }
     fn initial_commands(&self) -> Vec<vauchi_contract::Command> {
         Vec::new()
-    }
-    fn string(&self, key: &str) -> String {
-        vauchi_app::i18n::get_string(vauchi_gtk::locale::detect_locale(), key)
-    }
-    fn string_with_args(&self, key: &str, args: &[(&str, &str)]) -> String {
-        vauchi_app::i18n::get_string_with_args(vauchi_gtk::locale::detect_locale(), key, args)
     }
 
     fn take_invalidation(&self) -> bool {

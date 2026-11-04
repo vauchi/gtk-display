@@ -3,11 +3,7 @@
 
 //! Platform-specific GTK/GNOME chrome (header bar, notifications).
 
-pub mod camera;
 pub mod deep_link;
-#[cfg(all(feature = "camera", target_os = "linux"))]
-pub mod executors;
-pub mod hardware;
 pub mod header_bar;
 #[cfg(any(
     feature = "ble",

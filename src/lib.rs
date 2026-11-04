@@ -7,7 +7,6 @@
 
 pub mod capture;
 pub mod core_ui;
-pub mod locale;
 pub mod platform;
 pub mod screen_catalog;
 pub mod shell;
