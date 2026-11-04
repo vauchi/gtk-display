@@ -117,3 +117,42 @@ def test_status_exposes_title_and_detail(render_surface):
     assert status.get_description() == "DESC_Status"
     assert text_contents(status) == "vis_status — Status detail"
 
+
+
+def placeholder_of(widget):
+    attributes = widget.get_attributes() or {}
+    return attributes.get("placeholder-text")
+
+
+def entries(app):
+    from surface_probe import nodes_with_role
+    return nodes_with_role(app, {"text", "entry"})
+
+
+# @scenario: generic_presentation_protocol.feature :: Every shell renders the same prepared presentation
+def test_a_qr_capture_shows_the_copy_core_sends(render_surface):
+    app = render_surface(surface_with(
+        "Qr",
+        purpose="capture",
+        payloads=[],
+        capture_placeholder="CORE_Paste",
+        capture_submit_label="CORE_Submit",
+    ))
+    assert named(app, "CORE_Submit").get_role_name() == "button"
+    wait_until(
+        lambda: any(placeholder_of(entry) == "CORE_Paste" for entry in entries(app)),
+        message=f"no entry shows Core's placeholder\n{dump(app)}",
+    )
+
+
+# @scenario: generic_presentation_protocol.feature :: Every shell renders the same prepared presentation
+def test_a_searchable_list_shows_the_placeholder_core_sends(render_surface):
+    app = render_surface(surface_with(
+        "List",
+        searchable=True,
+        search_placeholder="CORE_Search",
+    ))
+    wait_until(
+        lambda: any(placeholder_of(entry) == "CORE_Search" for entry in entries(app)),
+        message=f"no search field shows Core's placeholder\n{dump(app)}",
+    )
