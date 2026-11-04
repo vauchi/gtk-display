@@ -16,12 +16,9 @@ include:
       - '/ci-templates/shell-command-conformance.yml'
       - '/ci-templates/security.yml'
       - '/ci-templates/mr-rules.yml'
-      - '/ci-templates/downstream.yml'
       - '/ci-templates/reuse.yml'
       - '/ci-templates/perf.yml'
-      - '/ci-templates/design-drift.yml'
       - '/ci-templates/content-fetch.yml'
-      - '/ci-templates/parser-parity.yml'
       - '/ci-templates/removed-symbols.yml'
       - '/ci-templates/badges.yml'
       - '/ci-templates/freshness.yml'
@@ -32,16 +29,14 @@ include:
       - '/ci-templates/cross-cutting-lint.yml'
       - '/ci-templates/domain-calls.yml'
 
+  - project: 'vauchi/scripts'
+    ref: c4bfaba28e6182e30de1bef7e4ab7af1e6dd048f
+    file:
+      - '/ci-templates/design-drift.yml'
+      - '/ci-templates/parser-parity.yml'
+
 variables:
   VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.06"
-  # cargo audit runs with --deny warnings; every entry here is an
-  # advisory with no fix available to us, not one we chose to skip.
-  # anyhow (RUSTSEC-2026-0190) and yanked spin were also flagged and are
-  # NOT here — a plain cargo update fixed both.
-  #   RUSTSEC-2024-0436  paste unmaintained, reached through nokhwa.
-  AUDIT_IGNORES: "--ignore RUSTSEC-2024-0436"
-  # Set to "true" to make downstream GTK verification advisory during runner incidents.
-  GTK_VERIFY_ALLOW_FAILURE: "false"
 
 stages:
   - auto-tag
@@ -273,13 +268,6 @@ perf:binary-size:
   variables:
     BINARY_SIZE_REPO_LABEL: "linux-gtk"
 
-# ============================================================
-# Verify Stage (upstream trigger only)
-# ============================================================
-# Runs when core merges to main and triggers this repo via
-# verify:downstream-rust. Verifies this repo builds and tests
-# pass against the updated vauchi-core.
-
 # Presentation drift: verify every canonical presentation node is rendered.
 check:design-drift:
   extends: .design-drift-job
@@ -287,7 +275,7 @@ check:design-drift:
     DESIGN_DRIFT_PROTOCOL: "presentation"
     DESIGN_DRIFT_MATCH_MODE: "grep"
     DESIGN_DRIFT_GREP_FILE: "src/core_ui/generic_surface"
-    CORE_REF: "main"
+    CONTRACT_PIN_FILE: "Cargo.toml"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
@@ -301,7 +289,7 @@ check:design-drift:
           - "src/core_ui/generic_surface/**/*"
           - ".gitlab-ci.yml"
 
-# Parser-parity gate for Core's canonical PresentationNode enum.
+# Parser parity against the display shell's pinned contract enum.
 check:parser-parity:
   extends: .parser-parity-job
   variables:
@@ -309,48 +297,13 @@ check:parser-parity:
     PARSER_FILE: "src/core_ui/generic_surface"
     PARSER_PROTOCOL: "presentation"
     PARSER_SCRIPT_REF: "ci-templates-v2026.11.06"
-    # The Core this repository pins, not Core main: since the contract
-    # move (core!2142) main no longer holds the presentation enum.
-    CORE_PIN_FILE: "Cargo.toml"
-    CORE_PIN_KIND: "cargo"
+    CONTRACT_PIN_FILE: "Cargo.toml"
 
 # Removed symbols: detect stale references to removed features
 check:removed-symbols:
   extends: .removed-symbols-job
   variables:
     SEARCH_DIRS: "src/ tests/"
-
-verify:upstream-compat:
-  extends: [.linux-runner, .verify-on-upstream, .timeout-standard]
-  stage: verify
-  needs: []
-  before_script:
-    - !reference [.self-hosted, before_script]
-    - sudo apt-get update -qq && sudo apt-get install -y -qq libgtk-4-dev libadwaita-1-dev 2>/dev/null || true
-  script:
-    - cargo nextest run --profile ci
-  allow_failure: false
-  rules:
-    - if: '$GTK_VERIFY_ALLOW_FAILURE == "true"'
-      allow_failure: true
-    - !reference [.verify-on-upstream, rules]
-
-# Runs when core creates a dev/RC tag and triggers this repo.
-# Verifies this repo builds and tests pass against the core tag.
-verify:upstream-prerelease:
-  extends: [.linux-runner, .verify-on-upstream-prerelease, .timeout-standard]
-  stage: verify
-  needs: []
-  before_script:
-    - !reference [.self-hosted, before_script]
-    - sudo apt-get update -qq && sudo apt-get install -y -qq libgtk-4-dev libadwaita-1-dev 2>/dev/null || true
-  script:
-    - cargo nextest run --profile ci
-  allow_failure: false
-  rules:
-    - if: '$GTK_VERIFY_ALLOW_FAILURE == "true"'
-      allow_failure: true
-    - !reference [.verify-on-upstream-prerelease, rules]
 
 # Exact-zero release gate (ADR-066) on release tags, the template's rule.
 release:ratchet-zero:

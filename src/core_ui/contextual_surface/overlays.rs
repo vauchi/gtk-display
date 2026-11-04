@@ -333,9 +333,6 @@ fn overlay_button(action: &vauchi_contract::ActionSpec, kind: OverlayKind) -> Bu
         button.set_size_request(-1, i32::from(tokens.minimum_target_size));
     }
     crate::core_ui::accessibility::apply_label(&button, &action.accessibility_label);
-    // See `generic_surface::action_button`: `Serious` is not yet visible to
-    // this build's linked vauchi-core, and `ActionTone` is
-    // `#[non_exhaustive]`, so the wildcard arm is required either way.
     match action.tone {
         vauchi_contract::ActionTone::Destructive => button.add_css_class("destructive-action"),
         vauchi_contract::ActionTone::Standard => {}

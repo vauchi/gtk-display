@@ -56,8 +56,8 @@ pub(crate) fn handle_exchange_commands(
             // ── Hardware ports (BLE, NFC, audio) ─────────────────────
             // linux-hw runs these through the hardware link (ADR-078 step
             // 3a); they reach this arm only when no link is installed — a
-            // build without hardware features, or a shell that did not
-            // start — and Core then learns the transport is unavailable.
+            // app that installed no hardware link, or one whose hardware
+            // did not start — and Core learns the transport is unavailable.
             Command::AudioEmitChallenge { .. } | Command::AudioListenForResponse { .. } => {
                 if notified_unavailable.insert("audio") {
                     dispatch_unavailable(container, app_engine, toast_overlay, "Audio");

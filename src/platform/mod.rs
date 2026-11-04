@@ -5,12 +5,5 @@
 
 pub mod deep_link;
 pub mod header_bar;
-#[cfg(any(
-    feature = "ble",
-    feature = "nfc",
-    feature = "audio",
-    feature = "camera"
-))]
-pub mod linux_hardware_link;
 pub mod notifications;
 pub mod screen_capture_protection;

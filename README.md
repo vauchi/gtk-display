@@ -19,7 +19,9 @@ The GTK4 renderer of Vauchi — living contact cards, exchanged in person.
 A library, built with GTK4-rs and libadwaita: it renders Core's generic
 presentation commands and reports events. The Linux app, `gvauchi`, wires
 it to Core and ships the packages; it lives in
-[linux-app](https://gitlab.com/vauchi/linux-app).
+[linux-app](https://gitlab.com/vauchi/linux-app). The only Vauchi
+dependency here is `vauchi-contract`; engine and hardware adapters live
+in the app.
 
 ## Prerequisites
 

@@ -4,25 +4,13 @@
 
 [package]
 name = "vauchi-gtk"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
-[features]
-default = ["audio", "ble", "camera"]
-audio = ["dep:vauchi-hardware", "vauchi-hardware/audio"]
-ble = ["dep:vauchi-hardware"]
-camera = ["dep:vauchi-hardware", "vauchi-hardware/camera"]
-nfc = ["dep:vauchi-hardware", "vauchi-hardware/nfc"]
-
 [dependencies]
 vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.97.2", version = "^0.97" }
-vauchi-core = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.99.1", version = "=0.99.1", features = ["secure-storage-linux"] }
-vauchi-app = { git = "https://gitlab.com/vauchi/core.git", tag = "v0.99.1", version = "=0.99.1", default-features = false, features = ["network", "content-updates"] }
-# The Linux hardware shell (ADR-077), pinned by tag like Core; the key keeps
-# the old crate name so the source files that import it are unchanged.
-vauchi-hardware = { package = "vauchi-linux-hw", git = "https://gitlab.com/vauchi/linux-hw.git", tag = "v0.99.1", version = "=0.99.1", optional = true }
 gtk4 = { version = "0.9", features = ["v4_10"] }
 libadwaita = { version = "0.7", features = ["v1_4"] }
 qrcode = { version = "0.14", default-features = false }
@@ -42,7 +30,6 @@ glib-build-tools = "0.20"
 
 [dev-dependencies]
 tempfile = "3.0"
-vauchi-hardware = { package = "vauchi-linux-hw", git = "https://gitlab.com/vauchi/linux-hw.git", tag = "v0.99.1", version = "=0.99.1", features = ["fake-bluez"] }
 
 # Release profile: optimized binary (matches cli/tui)
 [profile.release]
@@ -60,13 +47,3 @@ split-debuginfo = "unpacked"
 [profile.test]
 debug = "line-tables-only"
 split-debuginfo = "off"
-
-# rqrr 0.11.0 with the clamped Perspective::map (vauchi/utils/rqrr): a
-# [patch] applies only inside the workspace that declares it, so without
-# this stanza the crate resolved upstream rqrr from crates.io — the
-# unclamped abort path — and `panic = "abort"` turned a marginal camera
-# frame into a process kill. Same tag as core and linux-hw.
-# tests/rqrr_patch_reaches_this_shell.rs fails the moment this is lost.
-# Record: _private/docs/problems/done/2026-09-10-linux-gtk-unpatched-rqrr-abort-path/
-[patch.crates-io]
-rqrr = { git = "https://gitlab.com/vauchi/utils/rqrr.git", tag = "v0.11.0+vauchi.1" }

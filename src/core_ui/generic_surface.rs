@@ -157,11 +157,6 @@ pub(super) fn action_button(
     button.set_size_request(-1, targets::minimum_target_px(tokens));
     button.add_css_class(targets::TARGET_RADIUS_CLASS);
     accessibility::apply_label(&button, &action.accessibility_label);
-    // `ActionTone` is `#[non_exhaustive]`, and the linked vauchi-core does
-    // not yet carry `Serious` (core!feature/action-tone-serious, not merged
-    // here) — the wildcard arm keeps this compiling against both today's
-    // pin and a future one that adds it, without a name this build cannot
-    // resolve.
     match action.tone {
         vauchi_contract::ActionTone::Destructive => button.add_css_class("destructive-action"),
         vauchi_contract::ActionTone::Standard => {}

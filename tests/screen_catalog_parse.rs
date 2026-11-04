@@ -1,11 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The `render-catalog` harness reads Core's screen catalog
-//! (`vauchi-app/fixtures/screen_catalog_v1.json`) and, until that file is
-//! published, the presentation contract's command batches. Both shapes
-//! must yield the same list of (file stem, command batch) render jobs, and
-//! a `code_id` must never escape the output directory.
+//! Core's screen catalog and the contract's command batches both decode
+//! into render jobs. A code id must never escape the output directory.
 
 use vauchi_contract::Command;
 use vauchi_contract::fixtures::presentation_contract_v1_json;

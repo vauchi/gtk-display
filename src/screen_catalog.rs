@@ -3,11 +3,9 @@
 
 //! Input decoding for the `render-catalog` harness.
 //!
-//! Core publishes every app screen as a replayable command batch in
-//! `vauchi-app/fixtures/screen_catalog_v1.json`. Until that catalog exists
-//! on Core `main`, the presentation contract fixture carries batches of the
-//! same shape (`initial_commands` plus one per step), so both decode to the
-//! same list of render jobs and CI reports which one it drew from.
+//! The app's render-catalog tool accepts Core's screen catalog and the
+//! contract fixture's command batches. Both decode into the same render
+//! jobs; the source is retained for the tool's report.
 
 use vauchi_contract::Command;
 
