@@ -112,3 +112,33 @@ fn no_renderer_file_names_the_engine_type() {
         "the renderer names the engine type in: {offenders:?}; go through EngineLink"
     );
 }
+
+// @internal — Core prepares every word the renderer shows (ADR-066), so
+// nothing in it asks the engine link for copy (private#1029 4d.7d).
+#[test]
+fn no_renderer_file_asks_the_engine_for_copy() {
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut offenders = Vec::new();
+    let mut stack = vec![src.join("core_ui"), src.join("platform")];
+    let mut files = vec![src.join("shell.rs")];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).expect("read source dir") {
+            let path = entry.expect("dir entry").path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                files.push(path);
+            }
+        }
+    }
+    for path in files {
+        let text = std::fs::read_to_string(&path).expect("read source");
+        if text.contains(".string(\"") || text.contains(".string_with_args(") {
+            offenders.push(path.display().to_string());
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        "the renderer asks the engine for copy in: {offenders:?}; Core sends it"
+    );
+}
