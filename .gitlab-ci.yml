@@ -9,7 +9,7 @@
 
 include:
   - project: 'vauchi/scripts'
-    ref: ci-templates-v2026.11.06
+    ref: ci-templates-v2026.11.08
     file:
       - '/ci-templates/rust-base.yml'
       - '/ci-templates/release.yml'
@@ -255,6 +255,11 @@ security:audit:
 # Full cargo-deny check: advisories, licenses, bans, sources
 security:deny:
   extends: [.linux-runner-readonly, .security-deny-job]
+
+# deny.toml's git sources match the reviewed list in vauchi/scripts
+# policy/allowed-git-sources.txt (vauchi/private#1162).
+check:allow-git:
+  extends: [.allow-git-drift-job]
 
 # cargo-vet: every dependency audited or an honest exemption (VSC01)
 security:vet:
