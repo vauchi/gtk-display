@@ -7,7 +7,7 @@ use libadwaita as adw;
 use vauchi_contract::{
     ActionSpec, BindingId, InputValue, PresentationImageShape, PresentationNode,
     PresentationQrErrorCorrection, PresentationQrPurpose, PresentationRow, PresentationTokens,
-    QrPlacement, SurfaceId,
+    PresentationTone, QrPlacement, SurfaceId,
 };
 
 use super::{OnEvent, action_button, emit_value, render_node, targets};
@@ -582,7 +582,15 @@ fn render_row(
         );
     }
     for control in &row.controls {
-        content.append(&render_node(control, surface_id, on_event, link, tokens));
+        let widget = render_node(control, surface_id, on_event, link, tokens);
+        let classes = row_control_css_classes(control);
+        if !classes.is_empty() {
+            widget.set_halign(gtk4::Align::Start);
+        }
+        for class in classes {
+            widget.add_css_class(class);
+        }
+        content.append(&widget);
     }
     // Avatar and text form one accessible unit: the row's name has to cover
     // what a reader will land on, not just the text beside the picture.
@@ -629,10 +637,36 @@ fn row_action_controls(row: &PresentationRow) -> Vec<&ActionSpec> {
 // INLINE_TEST_REQUIRED: asserts on the private `image_content`/`shape_is_circle`
 // decisions, which have no public accessor and cannot be reached through a
 // widget without a display.
+/// A `Status` carried by a row is the row's state (who sees a card entry,
+/// vauchi/private#1206): a chip, not one more line of text, with its tone
+/// as a colour class. Other controls keep their own look.
+fn row_control_css_classes(control: &PresentationNode) -> Vec<&'static str> {
+    match control {
+        PresentationNode::Status { tone, .. } => {
+            let mut classes = vec!["status-chip"];
+            classes.extend(tone_css_class(*tone));
+            classes
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn tone_css_class(tone: PresentationTone) -> Option<&'static str> {
+    match tone {
+        PresentationTone::Neutral => None,
+        PresentationTone::Accent => Some("accent"),
+        PresentationTone::Success => Some("success"),
+        PresentationTone::Warning => Some("warning"),
+        PresentationTone::Error => Some("error"),
+    }
+}
+
 #[cfg(test)]
 mod image_content_tests {
-    use super::{ImageContent, image_content, shape_is_circle, sized_square_px};
-    use vauchi_contract::PresentationImageShape;
+    use super::{
+        ImageContent, image_content, row_control_css_classes, shape_is_circle, sized_square_px,
+    };
+    use vauchi_contract::{BindingId, PresentationImageShape, PresentationNode};
 
     // @internal
     #[test]
@@ -669,6 +703,66 @@ mod image_content_tests {
     fn nothing_to_show_resolves_to_nothing() {
         assert_eq!(image_content(None, None), ImageContent::Nothing);
         assert_eq!(image_content(Some(&[]), Some("")), ImageContent::Nothing);
+    }
+
+    fn status(tone: vauchi_contract::PresentationTone) -> PresentationNode {
+        PresentationNode::Status {
+            id: None,
+            title: "Family".into(),
+            detail: None,
+            icon_token: None,
+            badge: None,
+            tone,
+            activation: None,
+            accessibility: vauchi_contract::AccessibilitySpec::label("Family"),
+        }
+    }
+
+    /// Core sends who sees a card entry as a `Status` control on the row
+    /// (vauchi/private#1206); drawn as one more line of text it is
+    /// indistinguishable from the value above it, so it takes the chip class.
+    // @scenario: generic_presentation_protocol.feature :: Every shell renders the same prepared presentation
+    #[test]
+    fn a_rows_status_control_is_a_chip() {
+        assert_eq!(
+            row_control_css_classes(&status(vauchi_contract::PresentationTone::Neutral)),
+            vec!["status-chip"]
+        );
+    }
+
+    // @internal
+    #[test]
+    fn a_status_chips_tone_becomes_its_colour_class() {
+        use vauchi_contract::PresentationTone::{Accent, Error, Success, Warning};
+        assert_eq!(
+            row_control_css_classes(&status(Success)),
+            vec!["status-chip", "success"]
+        );
+        assert_eq!(
+            row_control_css_classes(&status(Warning)),
+            vec!["status-chip", "warning"]
+        );
+        assert_eq!(
+            row_control_css_classes(&status(Error)),
+            vec!["status-chip", "error"]
+        );
+        assert_eq!(
+            row_control_css_classes(&status(Accent)),
+            vec!["status-chip", "accent"]
+        );
+    }
+
+    // @internal
+    #[test]
+    fn other_row_controls_keep_their_own_look() {
+        let toggle = PresentationNode::Toggle {
+            binding_id: BindingId::new("remember").unwrap(),
+            label: String::new(),
+            value: true,
+            enabled: true,
+            accessibility: vauchi_contract::AccessibilitySpec::label("Remember"),
+        };
+        assert_eq!(row_control_css_classes(&toggle), Vec::<&str>::new());
     }
 
     /// `Circle` is the only shape libadwaita's avatar widget draws; every

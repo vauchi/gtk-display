@@ -219,6 +219,35 @@ list .avatar {{
     font-size: 0.85em;
     font-weight: 600;
 }}
+
+/* A row's Status control is the row's state (who sees a card entry,
+   vauchi/private#1206): a chip set apart from the value above it by
+   shape and ground, in primary text so it is never the quietest line. */
+.status-chip {{
+    background-color: @vauchi_bg_tertiary;
+    color: @vauchi_text_primary;
+    border: 1px solid @vauchi_border;
+    border-radius: 999px;
+    padding: 0.1em 0.7em;
+    font-size: 0.85em;
+    font-weight: 600;
+}}
+
+.status-chip.success {{
+    color: @vauchi_success;
+}}
+
+.status-chip.warning {{
+    color: @vauchi_warning;
+}}
+
+.status-chip.error {{
+    color: @vauchi_error;
+}}
+
+.status-chip.accent {{
+    color: @vauchi_accent;
+}}
 "#,
         bg_primary = colors.background,
         bg_secondary = colors.surface,
@@ -559,6 +588,42 @@ mod tests {
             "`button:checked` must pair the accent ground with Core's \
              on-accent text so the label stays readable on it: {body:?}"
         );
+    }
+
+    /// A row's `Status` control (who sees a card entry, vauchi/private#1206)
+    /// is set apart from the value above it by shape and ground, not by
+    /// dimming — and its text stays the primary colour so it is never the
+    /// quietest thing in the row.
+    // @internal
+    #[test]
+    fn generate_css_shapes_a_status_chip_on_the_tertiary_ground() {
+        let css = css_for(&colors());
+
+        let body = rule_body(&css, ".status-chip");
+        assert!(
+            body.contains("background-color: @vauchi_bg_tertiary"),
+            "`.status-chip` takes the tertiary ground: {body:?}"
+        );
+        assert!(
+            body.contains("color: @vauchi_text_primary"),
+            "`.status-chip` keeps primary text, it is a state, not a footnote: {body:?}"
+        );
+        assert!(
+            body.contains("border-radius: 999px"),
+            "`.status-chip` is a pill: {body:?}"
+        );
+        for (tone, colour) in [
+            ("success", "@vauchi_success"),
+            ("warning", "@vauchi_warning"),
+            ("error", "@vauchi_error"),
+            ("accent", "@vauchi_accent"),
+        ] {
+            let toned = rule_body(&css, &format!(".status-chip.{tone}"));
+            assert!(
+                toned.contains(&format!("color: {colour}")),
+                "`.status-chip.{tone}` colours its text with {colour}: {toned:?}"
+            );
+        }
     }
 
     /// `PresentationTextStyle::Heading` maps to the `title-2` GTK style
