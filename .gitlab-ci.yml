@@ -9,7 +9,7 @@
 
 include:
   - project: 'vauchi/scripts'
-    ref: ci-templates-v2026.11.09
+    ref: ci-templates-v2026.11.14
     file:
       - '/ci-templates/rust-base.yml'
       - '/ci-templates/allow-git.yml'
@@ -37,7 +37,7 @@ include:
       - '/ci-templates/parser-parity.yml'
 
 variables:
-  VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.09"
+  VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.14"
 
 stages:
   - auto-tag
@@ -302,7 +302,7 @@ check:parser-parity:
     FRONTEND_NAME: "linux-gtk"
     PARSER_FILE: "src/core_ui/generic_surface"
     PARSER_PROTOCOL: "presentation"
-    PARSER_SCRIPT_REF: "ci-templates-v2026.11.06"
+    PARSER_SCRIPT_REF: "ci-templates-v2026.11.14"
     CONTRACT_PIN_FILE: "Cargo.toml"
 
 # Removed symbols: detect stale references to removed features
@@ -383,4 +383,4 @@ check:pictogram-copies-current:
 lint:domain-calls:
   extends: .domain-calls-job
   variables:
-    VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.06"
+    VAUCHI_SCRIPTS_REF: "ci-templates-v2026.11.14"
