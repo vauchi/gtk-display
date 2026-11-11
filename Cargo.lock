@@ -874,8 +874,8 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
 name = "vauchi-contract"
-version = "0.97.2"
-source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.97.2#cf84bd10115270d2853321d854cfecf7a15f37a2"
+version = "0.98.0"
+source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.98.0#1fbfc734dcadfb92bc667343f43249faaaf369ac"
 dependencies = [
  "serde",
  "serde_json",
@@ -885,7 +885,7 @@ dependencies = [
 
 [[package]]
 name = "vauchi-gtk"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "glib-build-tools",
  "gtk4",

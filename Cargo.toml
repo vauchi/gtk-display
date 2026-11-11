@@ -4,13 +4,13 @@
 
 [package]
 name = "vauchi-gtk"
-version = "0.10.0"
+version = "0.11.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
 [dependencies]
-vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.97.2", version = "^0.97" }
+vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.98.0", version = "^0.98" }
 gtk4 = { version = "0.9", features = ["v4_10"] }
 libadwaita = { version = "0.7", features = ["v1_4"] }
 qrcode = { version = "0.14", default-features = false }
