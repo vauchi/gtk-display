@@ -258,7 +258,11 @@ fn register_event_handler(
     // Consume the initial wakeup before showing controls, otherwise the first
     // timer tick replaces widgets the user may already be activating (#764).
     repaint();
-    glib::timeout_add_local(std::time::Duration::from_millis(200), move || {
+    // 50 ms, not 200 ms: the tick is only a channel probe unless Core
+    // invalidated, so a faster poll costs nothing in steady state, and it
+    // halves the worst-case latency of a hardware event reaching the
+    // screen through the app-owned bridge (#1252).
+    glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
         repaint();
         glib::ControlFlow::Continue
     });
