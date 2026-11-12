@@ -92,18 +92,6 @@ pub(crate) fn handle_commands(
                     application.quit();
                 }
             }
-            // The 30-second fallback poll (`register_wakeup_poll`) keeps
-            // running regardless; this arms the fast path a live QR
-            // exchange's sub-second wait needs (#450). Core computes the
-            // wait (#548).
-            Command::ScheduleWakeup { delay_millis, .. } => {
-                crate::shell::arm_wakeup(
-                    app_engine,
-                    container,
-                    toast_overlay,
-                    u64::from(delay_millis),
-                );
-            }
             other => platform_commands.push(other),
         }
     }

@@ -499,10 +499,7 @@ fn native_renderer_restores_focus_by_core_binding_identity() {
 #[test]
 fn live_platform_callbacks_report_raw_events_to_the_generic_reducer() {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    for relative in [
-        "src/core_ui/action_dispatcher.rs",
-        "src/core_ui/hardware_link.rs",
-    ] {
+    for relative in ["src/core_ui/action_dispatcher.rs"] {
         let source = std::fs::read_to_string(manifest.join(relative)).expect("read GTK source");
         for legacy_boundary in [
             "handle_hardware_event",
@@ -529,14 +526,24 @@ fn generic_file_and_notification_effects_have_native_adapters() {
     let header =
         std::fs::read_to_string(manifest.join("src/platform/header_bar.rs")).expect("read header");
 
-    for command in [
-        "Command::FilePickFromUser",
-        "Command::ExportFile",
-        "Command::PostNotification",
-    ] {
+    for command in ["Command::FilePickFromUser", "Command::ExportFile"] {
         assert!(
             dispatcher.contains(command),
             "missing native adapter for {command}"
+        );
+    }
+    // Hardware commands have no renderer adapter (#1252): the app-owned
+    // bridge routes them to linux-hw, which posts notifications itself.
+    for command in [
+        "Command::PostNotification",
+        "Command::QrRequestScan",
+        "Command::LocationRequest",
+        "Command::ImageCaptureFromCamera",
+        "Command::SwitchCamera",
+    ] {
+        assert!(
+            !dispatcher.contains(command),
+            "renderer must not handle hardware command {command}"
         );
     }
     assert!(picker.contains("Event::FilePickedFromUser"));

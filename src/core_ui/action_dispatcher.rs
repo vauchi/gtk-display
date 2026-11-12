@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Executes platform commands from the Core reducer.
+//! Executes display commands from the Core reducer.
 //!
-//! Handles navigation, alerts, toasts and, when no hardware shell is
-//! attached, reports each hardware command's transport as unavailable;
-//! Core then decides what the user sees (ADR-066, private#1029).
+//! Handles navigation, alerts, toasts, pickers and the desktop's answers
+//! to display-side platform capabilities; Core then decides what the user
+//! sees (ADR-066). Hardware commands are app-owned (#1252): they never
+//! reach this shell, and no renderer arm handles or emulates them.
 
 mod file_picker;
 
@@ -20,67 +21,26 @@ use crate::core_ui::engine_link::EngineHandle;
 
 use super::contextual_surface::dispatch_platform_event;
 
-/// Dispatch exchange hardware commands to platform-specific actions (ADR-031).
+/// Dispatch display commands to platform-specific actions (ADR-031).
 ///
-/// Commands arrive in batches (e.g., BleStartScanning + BleStartAdvertising together).
-/// We deduplicate "unavailable" toasts per transport to avoid spamming the user.
+/// We deduplicate "unavailable" answers per capability to avoid spamming
+/// the user when a batch repeats one.
 pub(crate) fn handle_exchange_commands(
     container: &GtkBox,
     app_engine: &EngineHandle,
     toast_overlay: &adw::ToastOverlay,
     commands: &[Command],
 ) {
-    // Track which transports we've already shown "unavailable" toasts for
-    // to avoid spamming when a batch has multiple commands for the same transport.
+    // Track which capabilities we've already answered "unavailable" for
+    // to avoid spamming when a batch repeats the same one.
     let mut notified_unavailable: HashSet<&str> = HashSet::new();
 
     for cmd in commands {
-        if crate::core_ui::hardware_link::route_installed(cmd)
-            == crate::core_ui::hardware_link::Routed::ToHardware
-        {
-            continue;
-        }
         match cmd {
             Command::QrDisplay { .. } => {
                 // The paired ReplaceSurface command already carries the
                 // updated generic QR node.
             }
-            // linux-hw scans when it is attached (Core routes the scan to
-            // it); here none is. "Camera" is the name the old in-shell
-            // camera reported, which Core answers with a toast and does not
-            // treat as a failed exchange.
-            Command::QrRequestScan => {
-                dispatch_unavailable(container, app_engine, toast_overlay, "Camera");
-            }
-
-            // ── Hardware ports (BLE, NFC, audio) ─────────────────────
-            // linux-hw runs these through the hardware link (ADR-078 step
-            // 3a); they reach this arm only when no link is installed — a
-            // app that installed no hardware link, or one whose hardware
-            // did not start — and Core learns the transport is unavailable.
-            Command::AudioEmitChallenge { .. } | Command::AudioListenForResponse { .. } => {
-                if notified_unavailable.insert("audio") {
-                    dispatch_unavailable(container, app_engine, toast_overlay, "Audio");
-                }
-            }
-            Command::BleStartScanning { .. }
-            | Command::BleStartAdvertising { .. }
-            | Command::BleConnect { .. }
-            | Command::BleWriteCharacteristic { .. }
-            | Command::BleReadCharacteristic { .. } => {
-                if notified_unavailable.insert("ble") {
-                    dispatch_unavailable(container, app_engine, toast_overlay, "BLE");
-                }
-            }
-            Command::NfcActivate { .. } | Command::NfcSendApdu { .. } => {
-                if notified_unavailable.insert("nfc") {
-                    dispatch_unavailable(container, app_engine, toast_overlay, "NFC");
-                }
-            }
-            Command::AudioStop
-            | Command::BleStopScanning
-            | Command::BleDisconnect { .. }
-            | Command::NfcDeactivate => {}
             // ── Image picking (avatar editor) ────────────────────────
             Command::ImagePickFromFile => {
                 file_picker::open_image_picker(container, app_engine, toast_overlay);
@@ -99,9 +59,6 @@ pub(crate) fn handle_exchange_commands(
             Command::ExportFile { file } => {
                 file_picker::open_export(container, app_engine, toast_overlay, file.clone());
             }
-            Command::PostNotification { notification } => {
-                post_notification(container, notification);
-            }
             Command::ResetApplication => {
                 // ReplaceSurface in the same atomic reducer batch has already
                 // reset the platform-owned presentation projection.
@@ -114,17 +71,6 @@ pub(crate) fn handle_exchange_commands(
                     toast_overlay,
                     Event::HardwareUnavailable {
                         transport: "photo_library".into(),
-                    },
-                );
-            }
-            Command::ImageCaptureFromCamera => {
-                // Camera capture not supported on desktop — report unavailable
-                dispatch_platform_event(
-                    container,
-                    app_engine,
-                    toast_overlay,
-                    Event::HardwareUnavailable {
-                        transport: "camera".into(),
                     },
                 );
             }
@@ -154,13 +100,6 @@ pub(crate) fn handle_exchange_commands(
                     dispatch_unavailable(container, app_engine, toast_overlay, "share_sheet");
                 }
             }
-            // SwitchCamera is multi-stage exchange's front/rear flip —
-            // desktop webcams don't have a front/rear distinction.
-            Command::SwitchCamera { .. } => {
-                if notified_unavailable.insert("camera_switch") {
-                    dispatch_unavailable(container, app_engine, toast_overlay, "camera_switch");
-                }
-            }
             // Phase 2c screen-presentation: orientation lock is a
             // mobile concept — desktop windows are user-resizable and
             // don't rotate with the device. Answer unavailable.
@@ -170,31 +109,17 @@ pub(crate) fn handle_exchange_commands(
                 }
             }
 
-            // Capture-at-exchange (ADR-051): desktop GTK has no location
-            // provider wired (no geoclue dependency), so answer unavailable —
-            // consistent with camera/brightness/orientation above. This lets
-            // core clear the pending capture immediately instead of waiting
-            // out the request timeout. Silent (no toast): location is a
-            // background capture, not a user-initiated action.
-            Command::LocationRequest { .. } if notified_unavailable.insert("location") => {
-                dispatch_unavailable(container, app_engine, toast_overlay, "location");
-            }
+            // Hardware commands (QrRequestScan, BLE, NFC, audio, camera,
+            // location, notifications, wakeups) are app-owned (#1252):
+            // linux-app's bridge routes them to linux-hw and answers
+            // unavailability itself. Any that still arrive here fall to
+            // this arm and do nothing — the renderer never handles them.
             _ => {
-                // Future exchange command — no-op until implemented.
+                // Display command with no GTK arm, or a hardware command
+                // the app should have routed away — no-op either way.
             }
         }
     }
-}
-
-fn post_notification(container: &GtkBox, notification: &vauchi_contract::NotificationSpec) {
-    let Some(application) = container
-        .root()
-        .and_then(|root| root.downcast::<gtk4::Window>().ok())
-        .and_then(|window| window.application())
-    else {
-        return;
-    };
-    crate::platform::notifications::post_notification(&application, notification);
 }
 
 fn dispatch_unavailable(

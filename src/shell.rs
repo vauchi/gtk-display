@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Mattia Egloff <mattia.egloff@pm.me>
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! The GTK application: window, header bar, split view, deep links,
-//! shortcuts and the wakeup timers, around the engine and hardware the app
-//! hands in. Names no engine type (ADR-078 D-2): the engine is an
-//! [`EngineHandle`].
+//! shortcuts and the wakeup timers, around the engine the app hands in.
+//! Names no engine type (ADR-078 D-2): the engine is an [`EngineHandle`].
+//! Hardware is app-owned (#1252): this shell never starts or emulates it.
 use gtk4::glib;
 use gtk4::prelude::*;
 use gtk4::{self, Box as GtkBox, Orientation, gio};
@@ -16,7 +16,6 @@ use crate::core_ui::contextual_surface::{
     build_split_view, dispatch_platform_event, render_current_surface,
 };
 use crate::core_ui::engine_link::EngineHandle;
-use crate::core_ui::hardware_link::{self, StartHardware};
 use crate::platform;
 
 /// Builds the app's engine once the application activates.
@@ -37,16 +36,14 @@ thread_local! {
 
 thread_local! {
     static START_ENGINE: RefCell<Option<StartEngine>> = const { RefCell::new(None) };
-    static START_HARDWARE: RefCell<Option<StartHardware>> = const { RefCell::new(None) };
 }
 
-/// The GTK application around the engine and the hardware the app starts
-/// (ADR-078 step 4d): the app (linux-app) owns both, this crate renders and
-/// routes commands. `start_engine` runs once, when the application
-/// activates.
-pub fn run(start_engine: StartEngine, start_hardware: StartHardware) {
+/// The GTK application around the engine the app starts (ADR-078 step 4d):
+/// the app (linux-app) owns the engine and the hardware, this crate renders
+/// and applies display commands. `start_engine` runs once, when the
+/// application activates.
+pub fn run(start_engine: StartEngine) {
     START_ENGINE.with(|slot| *slot.borrow_mut() = Some(start_engine));
-    START_HARDWARE.with(|slot| *slot.borrow_mut() = Some(start_hardware));
     crate::core_ui::fonts::register_app_fonts();
 
     // Consume --reset-for-testing before GTK sees it (GTK rejects unknown flags).
@@ -75,9 +72,6 @@ pub fn run(start_engine: StartEngine, start_hardware: StartHardware) {
         .build();
     app.connect_activate(build_ui);
     app.connect_open(open_deep_links);
-    // Drop the hardware shell (its runtime, its BlueZ sessions) before the
-    // process exits; a thread-local dropped after Tokio's own aborts.
-    app.connect_shutdown(|_| hardware_link::uninstall());
     let weak_app = app.downgrade();
     platform::notifications::install_open_action(&app, move |uri| {
         if let Some(app) = weak_app.upgrade() {
@@ -147,7 +141,6 @@ fn build_ui(app: &adw::Application) {
     root.append(&split_view);
 
     register_wakeup_poll(&engine_handle, &content, &toast_overlay);
-    install_hardware(&engine_handle, &content, &toast_overlay);
 
     let window = adw::ApplicationWindow::builder()
         .application(app)
@@ -289,58 +282,4 @@ fn register_wakeup_poll(
 
 fn fire_wakeup(app_engine: &EngineHandle, content: &GtkBox, toast_overlay: &adw::ToastOverlay) {
     dispatch_platform_event(content, app_engine, toast_overlay, Event::WakeupFired);
-}
-
-thread_local! {
-    /// The fast-path wakeup `arm_wakeup` is currently waiting on, if any.
-    /// Single-threaded (the GTK main loop owns every call), so a
-    /// thread-local is enough to let a new `ScheduleWakeup` replace a
-    /// stale one instead of both firing.
-    static PENDING_FAST_WAKEUP: RefCell<Option<glib::SourceId>> = const { RefCell::new(None) };
-}
-
-/// Arms a one-shot wakeup timer at `delay_millis`, replacing any pending
-/// one (ADR-044 Am2a). The 30-second poll `register_wakeup_poll` installs
-/// keeps running underneath as the fallback heartbeat; this is the fast
-/// path a live QR exchange's sub-second `ScheduleWakeup` needs to advance
-/// on time (#450).
-pub(crate) fn arm_wakeup(
-    app_engine: &EngineHandle,
-    content: &GtkBox,
-    toast_overlay: &adw::ToastOverlay,
-    delay_millis: u64,
-) {
-    PENDING_FAST_WAKEUP.with(|pending| {
-        if let Some(previous) = pending.borrow_mut().take() {
-            previous.remove();
-        }
-    });
-    let app_engine = app_engine.clone();
-    let content = content.clone();
-    let toast_overlay = toast_overlay.clone();
-    let source_id =
-        glib::timeout_add_local_once(std::time::Duration::from_millis(delay_millis), move || {
-            PENDING_FAST_WAKEUP.with(|pending| {
-                pending.borrow_mut().take();
-            });
-            fire_wakeup(&app_engine, &content, &toast_overlay);
-        });
-    PENDING_FAST_WAKEUP.with(|pending| {
-        *pending.borrow_mut() = Some(source_id);
-    });
-}
-
-/// Start the hardware the app chose (`run`), report its capabilities
-/// to Core once and route the hardware commands it ports to it.
-fn install_hardware(engine: &EngineHandle, content: &GtkBox, toast_overlay: &adw::ToastOverlay) {
-    let Some(start) = START_HARDWARE.with(|slot| slot.borrow_mut().take()) else {
-        return;
-    };
-    let Some(started) = start() else {
-        return;
-    };
-    if let Some(capabilities) = started.capabilities {
-        dispatch_platform_event(content, engine, toast_overlay, capabilities);
-    }
-    hardware_link::install(started.link, content, engine, toast_overlay);
 }
