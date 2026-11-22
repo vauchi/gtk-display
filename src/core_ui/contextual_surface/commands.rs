@@ -11,8 +11,8 @@ use std::rc::Rc;
 use vauchi_contract::{Command, InteractionId, SurfaceId};
 
 use super::widgets::{
-    COMMAND_STATE, clear_title_row_for, context_bar_button, dispatch_event, render_primary_button,
-    render_title_row,
+    COMMAND_STATE, clear_title_row_for, context_bar_button, dispatch_event, render_pinned_buttons,
+    render_primary_button, render_title_row,
 };
 use super::{environment, overlays, sidebar};
 use crate::core_ui::engine_link::EngineHandle;
@@ -197,6 +197,7 @@ fn render_presentation(
             bar,
             navigation_shown,
         );
+        render_pinned_buttons(container, app_engine, toast_overlay, surface_id, bar);
         if let Some(primary) = bar.primary.as_ref() {
             render_primary_button(container, app_engine, toast_overlay, surface_id, primary);
         }

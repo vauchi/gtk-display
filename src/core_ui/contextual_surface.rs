@@ -50,6 +50,8 @@ pub enum GtkContextRole {
     Primary,
     Secondary,
     Info,
+    /// One of Core's pinned actions (`ContextBar::pinned`).
+    Pinned,
 }
 
 /// Where native GTK code draws a role's control now that the separate row
@@ -67,7 +69,7 @@ impl GtkContextRole {
         match self {
             GtkContextRole::Back | GtkContextRole::Navigation => GtkControlArea::TitleRowLeading,
             GtkContextRole::Secondary | GtkContextRole::Info => GtkControlArea::TitleRowTrailing,
-            GtkContextRole::Primary => GtkControlArea::SurfaceContent,
+            GtkContextRole::Primary | GtkContextRole::Pinned => GtkControlArea::SurfaceContent,
         }
     }
 }
@@ -111,6 +113,20 @@ pub fn context_controls_with(
         })
     })
     .collect()
+}
+
+/// Core's pinned group, in Core's order: a decision kept in view under
+/// the content (vauchi/private#1304). Drawn full width and none of them
+/// emphasized, so no answer reads as the suggested one.
+pub fn pinned_controls(bar: &ContextBar) -> Vec<GtkContextControl<'_>> {
+    bar.pinned
+        .iter()
+        .map(|action| GtkContextControl {
+            role: GtkContextRole::Pinned,
+            action,
+            emphasized: false,
+        })
+        .collect()
 }
 
 pub fn interaction_for_shortcut(

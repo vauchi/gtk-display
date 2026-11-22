@@ -143,6 +143,32 @@ pub(super) fn render_primary_button(
     container.append(&button);
 }
 
+/// Core's pinned group under the content and above the primary button:
+/// one full-width button per action, in Core's order.
+pub(super) fn render_pinned_buttons(
+    container: &GtkBox,
+    app_engine: &EngineHandle,
+    toast_overlay: &adw::ToastOverlay,
+    surface_id: &SurfaceId,
+    bar: &vauchi_contract::ContextBar,
+) {
+    for control in super::pinned_controls(bar) {
+        let button = build_button(control.role, control.action, control.emphasized);
+        button.set_margin_start(8);
+        button.set_margin_end(8);
+        button.set_margin_top(4);
+        wire_context_button(
+            &button,
+            surface_id,
+            &control.action.interaction_id,
+            container,
+            app_engine,
+            toast_overlay,
+        );
+        container.append(&button);
+    }
+}
+
 fn wire_context_button(
     button: &Button,
     surface_id: &SurfaceId,
@@ -241,6 +267,10 @@ fn build_button(
         GtkContextRole::Primary => button.add_css_class("context-primary"),
         GtkContextRole::Secondary => button.add_css_class("context-secondary"),
         GtkContextRole::Info => button.add_css_class("context-info"),
+        GtkContextRole::Pinned => {
+            button.set_hexpand(true);
+            button.add_css_class("context-pinned");
+        }
     }
     if emphasized {
         button.set_hexpand(true);
