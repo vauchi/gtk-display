@@ -100,6 +100,7 @@ fn environment_event(width: i32, height: i32, motion: MotionPreference, dark: bo
         } else {
             ColorScheme::Light
         }),
+        pinned_actions: false,
     }
 }
 

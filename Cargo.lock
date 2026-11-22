@@ -874,8 +874,8 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
 name = "vauchi-contract"
-version = "0.98.0"
-source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.98.0#1fbfc734dcadfb92bc667343f43249faaaf369ac"
+version = "0.99.0"
+source = "git+https://gitlab.com/vauchi/contract.git?tag=v0.99.0#e4401c512be34dadfe9232c671597c35e6db6a10"
 dependencies = [
  "serde",
  "serde_json",

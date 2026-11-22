@@ -172,6 +172,7 @@ fn command_state_keeps_core_bar_profile_and_overlay_data_opaque() {
         primary: Some(action("save", Some(StandardShortcut::ActivatePrimary))),
         secondary: Some(action("more", None)),
         info: None,
+        pinned: Vec::new(),
     };
     let profile = PresentationProfile {
         window_class: WindowClass::Expanded,
@@ -401,6 +402,7 @@ fn context_controls_preserve_core_semantics_in_four_role_order() {
         primary: Some(action("save", Some(StandardShortcut::ActivatePrimary))),
         secondary: Some(destructive_more),
         info: None,
+        pinned: Vec::new(),
     };
 
     let controls = context_controls(&bar);
@@ -439,6 +441,7 @@ fn keyboard_activation_uses_only_core_declared_shortcuts() {
         primary: Some(undo),
         secondary: None,
         info: None,
+        pinned: Vec::new(),
     };
 
     assert_eq!(
@@ -610,6 +613,7 @@ fn context_controls_leave_the_navigation_launcher_out_beside_a_sidebar() {
         primary: Some(action("save", Some(StandardShortcut::ActivatePrimary))),
         secondary: Some(action("more", None)),
         info: None,
+        pinned: Vec::new(),
     };
 
     let beside_sidebar = context_controls_with(&bar, true);
@@ -640,6 +644,7 @@ fn context_controls_draw_the_info_slot_last_and_only_when_core_sends_it() {
         primary: Some(action("save", Some(StandardShortcut::ActivatePrimary))),
         secondary: Some(action("more", None)),
         info: Some(action("presentation.info", None)),
+        pinned: Vec::new(),
     };
     let roles = |bar: &ContextBar| {
         context_controls_with(bar, true)

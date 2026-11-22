@@ -10,7 +10,7 @@ license = "GPL-3.0-or-later"
 description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
 [dependencies]
-vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.98.0", version = "^0.98" }
+vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.99.0", version = "^0.99" }
 gtk4 = { version = "0.9", features = ["v4_10"] }
 libadwaita = { version = "0.7", features = ["v1_4"] }
 qrcode = { version = "0.14", default-features = false }
