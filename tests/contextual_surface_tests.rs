@@ -10,7 +10,7 @@ use vauchi_contract::{
 };
 use vauchi_gtk::core_ui::contextual_surface::{
     GtkContextRole, GtkControlArea, GtkOverlayTransition, GtkPresentationState, context_controls,
-    context_controls_with, interaction_for_shortcut,
+    context_controls_with, interaction_for_shortcut, pinned_controls,
 };
 
 fn surface(id: &str) -> SurfaceId {
@@ -428,6 +428,45 @@ fn context_controls_preserve_core_semantics_in_four_role_order() {
         "More contact actions"
     );
     assert_eq!(controls[3].action.tone, ActionTone::Destructive);
+}
+
+/// Core pins a few actions under the content for a decision that must not
+/// scroll away (vauchi/private#1304); the shell draws them in Core's
+/// order, none of them emphasized, and none from a bar without the group.
+// @internal
+#[test]
+fn pinned_controls_keep_cores_order_and_are_not_emphasized() {
+    let bar = ContextBar {
+        back: None,
+        navigation: None,
+        primary: Some(action("done", None)),
+        secondary: None,
+        info: None,
+        pinned: vec![action("pinned.yes", None), action("pinned.no", None)],
+    };
+
+    let pinned = pinned_controls(&bar);
+
+    assert_eq!(
+        pinned
+            .iter()
+            .map(|control| control.action.interaction_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["pinned.yes", "pinned.no"]
+    );
+    assert!(pinned.iter().all(|control| !control.emphasized));
+    assert!(
+        context_controls(&bar)
+            .iter()
+            .all(|control| control.action.interaction_id.as_str() != "pinned.yes"),
+        "a pinned action is not drawn a second time in the title row"
+    );
+
+    let without = ContextBar {
+        pinned: Vec::new(),
+        ..bar
+    };
+    assert!(pinned_controls(&without).is_empty());
 }
 
 // @scenario: generic_presentation_protocol.feature :: User interaction returns as an opaque event

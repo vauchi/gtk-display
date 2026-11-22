@@ -142,4 +142,17 @@ mod tests {
             assert_eq!(color_scheme, Some(expected), "dark = {dark}");
         }
     }
+
+    /// Core pins a decision's actions only for a shell that says it keeps
+    /// them in view (vauchi/private#1304).
+    // @internal
+    #[test]
+    fn the_environment_report_says_the_shell_draws_pinned_actions() {
+        let event = environment_event(800, 600, MotionPreference::Full, false);
+
+        let Event::PresentationEnvironmentChanged { pinned_actions, .. } = event else {
+            panic!("expected PresentationEnvironmentChanged, got {event:?}");
+        };
+        assert!(pinned_actions);
+    }
 }
