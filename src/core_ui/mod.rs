@@ -5,6 +5,7 @@
 
 pub(crate) mod accessibility;
 pub mod action_dispatcher;
+pub mod camera_preview;
 pub mod contextual_surface;
 pub mod engine_link;
 pub mod fonts;
