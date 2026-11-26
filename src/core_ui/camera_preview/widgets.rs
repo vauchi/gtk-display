@@ -9,6 +9,23 @@ thread_local! {
     static VIEWPORT: RefCell<Option<String>> = const { RefCell::new(None) };
     #[cfg(target_os = "linux")]
     static RESOLVER: RefCell<Option<super::SourceResolver>> = const { RefCell::new(None) };
+    #[cfg(target_os = "linux")]
+    static FRAME_RESOLVER: RefCell<Option<super::FrameResolver>> = const { RefCell::new(None) };
+}
+
+#[cfg(target_os = "linux")]
+pub fn set_frame_resolver(resolver: Option<super::FrameResolver>) {
+    FRAME_RESOLVER.with(|current| *current.borrow_mut() = resolver);
+}
+
+#[cfg(target_os = "linux")]
+pub(super) fn frame_resolver() -> Option<super::FrameResolver> {
+    FRAME_RESOLVER.with(|current| current.borrow().clone())
+}
+
+#[cfg(target_os = "linux")]
+pub(super) fn viewport() -> Option<String> {
+    VIEWPORT.with(|current| current.borrow().clone())
 }
 
 #[cfg(target_os = "linux")]
@@ -31,6 +48,8 @@ pub fn picture(accessible_label: &str) -> Picture {
     picture.set_accessible_role(gtk4::AccessibleRole::Img);
     picture.set_widget_name("camera-preview");
     crate::core_ui::accessibility::apply_label(&picture, accessible_label);
+    #[cfg(target_os = "linux")]
+    super::native_widget::attach(&picture);
     #[cfg(all(feature = "camera-preview", target_os = "linux"))]
     attach(&picture);
     picture
@@ -47,6 +66,10 @@ fn attach(picture: &Picture) {
         let Some(picture) = weak.upgrade() else {
             return glib::ControlFlow::Break;
         };
+        if frame_resolver().is_some() {
+            source = None;
+            return glib::ControlFlow::Continue;
+        }
         if picture.root().is_none() {
             source = None;
             attempted = None;

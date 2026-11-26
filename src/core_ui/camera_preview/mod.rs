@@ -2,9 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 mod frame;
+#[cfg(target_os = "linux")]
+mod native;
+#[cfg(target_os = "linux")]
+mod native_widget;
 #[cfg(all(feature = "camera-preview", target_os = "linux"))]
 mod transport;
 mod widgets;
+#[cfg(target_os = "linux")]
+pub use native::{FrameResolver, FrameResource, NativePreviewReader};
+#[cfg(target_os = "linux")]
+pub use widgets::set_frame_resolver;
 
 pub use widgets::{picture, set_viewport};
 

@@ -12,5 +12,5 @@ path = "junit.xml"
 xvfb = { max-threads = 1 }
 
 [[profile.default.overrides]]
-filter = 'binary(render_fixture_smoke) | binary(camera_preview_widget)'
+filter = 'binary(render_fixture_smoke) | binary(camera_preview_widget) | binary(native_preview_widget)'
 test-group = 'xvfb'
