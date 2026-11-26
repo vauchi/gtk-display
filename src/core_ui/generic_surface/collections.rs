@@ -506,7 +506,12 @@ fn render_qr_capture(
     });
     row.append(&entry);
     row.append(&button);
-    row
+    let capture = GtkBox::new(Orientation::Vertical, 8);
+    capture.append(&crate::core_ui::camera_preview::picture(
+        copy.accessible_name,
+    ));
+    capture.append(&row);
+    capture
 }
 
 /// The row's avatar: Core's image bytes, or the initials it prepared for when

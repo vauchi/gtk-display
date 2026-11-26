@@ -11,5 +11,9 @@ mappin = "mappin"
 # OpenType variable-font axis tag (width) in the Bricolage Grotesque family
 wdth = "wdth"
 
+[default.extend-identifiers]
+# PipeWire's external buffer accessor.
+datas_mut = "datas_mut"
+
 [files]
 extend-exclude = ["supply-chain/"]  # cargo-vet managed — crate names are not typos

@@ -45,15 +45,15 @@ fn a_preview_binding_rejects_other_nodes_and_never_falls_back_after_removal() {
     let mut binding = PreviewBinding::new("camera-42").unwrap();
     let expected = preview_node_name("camera-42").unwrap();
     assert_eq!(binding.current(), None);
-    assert_eq!(binding.observe(1, "webcam", "Video/Source", "101"), false);
-    assert_eq!(binding.observe(2, &expected, "Audio/Source", "102"), false);
-    assert_eq!(binding.observe(3, &expected, "Video/Source", "103"), true);
+    assert!(!binding.observe(1, "webcam", "Video/Source", "101"));
+    assert!(!binding.observe(2, &expected, "Audio/Source", "102"));
+    assert!(binding.observe(3, &expected, "Video/Source", "103"));
     assert_eq!(binding.current(), Some((3, "103")));
     binding.remove(1);
     assert_eq!(binding.current(), Some((3, "103")));
     binding.remove(3);
     assert_eq!(binding.current(), None);
-    assert_eq!(binding.retired(), true);
-    assert_eq!(binding.observe(4, &expected, "Video/Source", "104"), false);
+    assert!(binding.retired());
+    assert!(!binding.observe(4, &expected, "Video/Source", "104"));
     assert_eq!(binding.current(), None);
 }

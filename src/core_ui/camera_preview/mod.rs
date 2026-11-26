@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 mod frame;
+#[cfg(all(feature = "camera-preview", target_os = "linux"))]
+mod transport;
+mod widgets;
+
+pub use widgets::{picture, set_viewport};
 
 pub use frame::PreviewFrame;
 

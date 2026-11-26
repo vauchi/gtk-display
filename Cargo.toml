@@ -9,6 +9,13 @@ edition = "2024"
 license = "GPL-3.0-or-later"
 description = "GTK4 + libadwaita renderer for Vauchi's generic presentation commands"
 
+[features]
+default = ["camera-preview"]
+camera-preview = ["dep:pipewire"]
+
+[target.'cfg(target_os = "linux")'.dependencies]
+pipewire = { version = "=0.10.1", features = ["v0_3_77"], optional = true }
+
 [dependencies]
 vauchi-contract = { git = "https://gitlab.com/vauchi/contract.git", tag = "v0.101.0", version = "^0.101" }
 gtk4 = { version = "0.9", features = ["v4_10"] }

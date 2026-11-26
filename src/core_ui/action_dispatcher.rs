@@ -37,6 +37,9 @@ pub(crate) fn handle_exchange_commands(
 
     for cmd in commands {
         match cmd {
+            Command::CameraViewport { preview_id } => {
+                crate::core_ui::camera_preview::set_viewport(Some(preview_id));
+            }
             Command::QrDisplay { .. } => {
                 // The paired ReplaceSurface command already carries the
                 // updated generic QR node.
@@ -60,6 +63,7 @@ pub(crate) fn handle_exchange_commands(
                 file_picker::open_export(container, app_engine, toast_overlay, file.clone());
             }
             Command::ResetApplication => {
+                crate::core_ui::camera_preview::set_viewport(None);
                 // ReplaceSurface in the same atomic reducer batch has already
                 // reset the platform-owned presentation projection.
             }
