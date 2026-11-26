@@ -57,14 +57,14 @@ auto-tag:version:
 .camera-sdk:
   before_script:
     - |
-      pkg-config --atleast-version=0.3.77 libpipewire-0.3 ||
-        flock /tmp/vauchi-camera-sdk.lock sh -ec '
-          if ! pkg-config --atleast-version=0.3.77 libpipewire-0.3; then
-            sudo apt-get -o DPkg::Lock::Timeout=120 update -qq
-            sudo apt-get -o DPkg::Lock::Timeout=120 install -y -qq --no-install-recommends libpipewire-0.3-dev libclang-dev
-          fi
-          pkg-config --atleast-version=0.3.77 libpipewire-0.3
-        '
+      if ! pkg-config --atleast-version=0.3.77 libpipewire-0.3; then
+        curl --fail-with-body --silent --show-error --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          "${CI_API_V4_URL}/projects/vauchi%2Fscripts/repository/files/scripts%2Fci%2Fprepare-pipewire-sdk.sh/raw?ref=c8decece5226d8981ce3cfb61ec33c4be0d0366b" \
+          -o .prepare-pipewire-sdk.sh
+        bash .prepare-pipewire-sdk.sh "${CI_PROJECT_DIR}/.camera-sdk"
+        . "${CI_PROJECT_DIR}/.camera-sdk/env.sh"
+      fi
+      pkg-config --atleast-version=0.3.77 libpipewire-0.3
 
 # Cross-cutting lint bundle: docs gate + locale-key-coverage + design-tokens + humble.
 # All checks run sequentially in one docker job to reduce runner scheduling overhead.
@@ -194,6 +194,8 @@ contract:replay:
 # AT-SPI accessibility + widget tree tests of the renderer, each surface
 # rendered by render_fixture with no engine
 test:a11y:
+  before_script:
+    - !reference [.camera-sdk, before_script]
   stage: test
   needs:
     - job: build:app
