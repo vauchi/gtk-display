@@ -7,6 +7,13 @@ use std::cell::RefCell;
 
 thread_local! {
     static VIEWPORT: RefCell<Option<String>> = const { RefCell::new(None) };
+    #[cfg(target_os = "linux")]
+    static RESOLVER: RefCell<Option<super::SourceResolver>> = const { RefCell::new(None) };
+}
+
+#[cfg(target_os = "linux")]
+pub fn set_source_resolver(resolver: Option<super::SourceResolver>) {
+    RESOLVER.with(|current| *current.borrow_mut() = resolver);
 }
 
 pub fn set_viewport(preview_id: Option<&str>) {
@@ -35,6 +42,7 @@ fn attach(picture: &Picture) {
     let weak = picture.downgrade();
     let mut source = None;
     let mut attempted = None;
+    let mut retired = false;
     glib::timeout_add_local(std::time::Duration::from_millis(30), move || {
         let Some(picture) = weak.upgrade() else {
             return glib::ControlFlow::Break;
@@ -42,16 +50,32 @@ fn attach(picture: &Picture) {
         if picture.root().is_none() {
             source = None;
             attempted = None;
+            retired = false;
             picture.set_paintable(None::<&gtk4::gdk::Paintable>);
             return glib::ControlFlow::Continue;
         }
         let preview_id = VIEWPORT.with(|id| id.borrow().clone());
         if attempted != preview_id {
             attempted = preview_id.clone();
+            retired = false;
             picture.set_paintable(None::<&gtk4::gdk::Paintable>);
-            source = preview_id
-                .as_deref()
-                .and_then(super::transport::PreviewStream::new);
+            source = None;
+        }
+        if source.is_none()
+            && !retired
+            && let Some(id) = preview_id.as_deref()
+        {
+            let resolver = RESOLVER.with(|resolver| resolver.borrow().clone());
+            if let Some(resolve) = resolver {
+                match resolve(id) {
+                    Ok(Some(descriptor)) => {
+                        source = super::transport::PreviewStream::new(descriptor);
+                        retired = source.is_none();
+                    }
+                    Ok(None) => {}
+                    Err(_) => retired = true,
+                }
+            }
         }
         if let Some(client) = source.as_mut() {
             if let Some(frame) = client.poll() {
@@ -60,6 +84,7 @@ fn attach(picture: &Picture) {
             if client.closed() {
                 picture.set_paintable(None::<&gtk4::gdk::Paintable>);
                 source = None;
+                retired = true;
             }
         }
         glib::ControlFlow::Continue

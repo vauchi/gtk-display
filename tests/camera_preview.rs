@@ -57,3 +57,19 @@ fn a_preview_binding_rejects_other_nodes_and_never_falls_back_after_removal() {
     assert!(!binding.observe(4, &expected, "Video/Source", "104"));
     assert_eq!(binding.current(), None);
 }
+
+// @internal
+#[test]
+fn a_descriptor_pins_both_node_id_and_serial_even_when_another_app_has_the_same_name() {
+    let mut binding = PreviewBinding::for_source(42, 1042).unwrap();
+    assert!(!binding.observe(41, "same-name", "Video/Source", "1042"));
+    assert!(!binding.observe(42, "same-name", "Video/Source", "1043"));
+    assert!(!binding.observe(42, "same-name", "Audio/Source", "1042"));
+    assert!(binding.observe(42, "any-name", "Video/Source", "1042"));
+    assert_eq!(binding.current(), Some((42, "1042")));
+    binding.remove(42);
+    assert!(binding.retired());
+    assert!(!binding.observe(42, "any-name", "Video/Source", "1042"));
+    assert!(PreviewBinding::for_source(u32::MAX, 1).is_none());
+    assert!(PreviewBinding::for_source(42, 0).is_none());
+}

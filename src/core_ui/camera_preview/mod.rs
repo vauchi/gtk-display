@@ -10,6 +10,19 @@ pub use widgets::{picture, set_viewport};
 
 pub use frame::PreviewFrame;
 
+#[cfg(target_os = "linux")]
+pub struct PreviewSource {
+    pub node_id: u32,
+    pub serial: u64,
+    pub remote_fd: Option<std::os::fd::OwnedFd>,
+}
+
+#[cfg(target_os = "linux")]
+pub type SourceResolver = std::rc::Rc<dyn Fn(&str) -> Result<Option<PreviewSource>, String>>;
+
+#[cfg(target_os = "linux")]
+pub use widgets::set_source_resolver;
+
 pub fn preview_node_name(preview_id: &str) -> Option<String> {
     if preview_id.is_empty() || preview_id.len() > 128 {
         return None;
@@ -25,6 +38,7 @@ pub fn preview_node_name(preview_id: &str) -> Option<String> {
 /// Removal retires the binding; PipeWire must never select a replacement.
 pub struct PreviewBinding {
     name: String,
+    expected: Option<(u32, u64)>,
     current: Option<(u32, String)>,
     retired: bool,
 }
@@ -33,6 +47,19 @@ impl PreviewBinding {
     pub fn new(preview_id: &str) -> Option<Self> {
         Some(Self {
             name: preview_node_name(preview_id)?,
+            expected: None,
+            current: None,
+            retired: false,
+        })
+    }
+
+    pub fn for_source(node_id: u32, serial: u64) -> Option<Self> {
+        if node_id == u32::MAX || serial == 0 {
+            return None;
+        }
+        Some(Self {
+            name: String::new(),
+            expected: Some((node_id, serial)),
             current: None,
             retired: false,
         })
@@ -41,9 +68,15 @@ impl PreviewBinding {
     pub fn observe(&mut self, id: u32, name: &str, media_class: &str, serial: &str) -> bool {
         if self.retired
             || self.current.is_some()
-            || self.name != name
+            || id == u32::MAX
+            || match self.expected {
+                Some((expected_id, expected_serial)) => {
+                    id != expected_id || serial.parse::<u64>().ok() != Some(expected_serial)
+                }
+                None => self.name != name,
+            }
             || media_class != "Video/Source"
-            || serial.parse::<u64>().is_err()
+            || serial.parse::<u64>().ok().is_none_or(|serial| serial == 0)
         {
             return false;
         }

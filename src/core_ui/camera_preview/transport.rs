@@ -36,18 +36,28 @@ struct Connected {
 }
 
 impl PreviewStream {
-    pub(super) fn new(preview_id: &str) -> Option<Self> {
-        let binding = Rc::new(RefCell::new(PreviewBinding::new(preview_id)?));
+    pub(super) fn new(source: super::PreviewSource) -> Option<Self> {
+        let binding = Rc::new(RefCell::new(PreviewBinding::for_source(
+            source.node_id,
+            source.serial,
+        )?));
         pw::init();
         let mainloop = pw::main_loop::MainLoopRc::new(None).ok()?;
         let context = pw::context::ContextRc::new(&mainloop, None).ok()?;
-        let core = context.connect_rc(None).ok()?;
+        let core = match source.remote_fd {
+            Some(fd) => context.connect_fd_rc(fd, None),
+            None => context.connect_rc(None),
+        }
+        .ok()?;
         let registry = core.get_registry_rc().ok()?;
         let observed = binding.clone();
         let removed = binding.clone();
         let _registry_events = registry
             .add_listener_local()
             .global(move |object| {
+                if object.type_ != pw::types::ObjectType::Node {
+                    return;
+                }
                 let Some(props) = object.props else {
                     return;
                 };
