@@ -6,13 +6,11 @@
 # Path is relative to nextest's output dir (target/nextest/ci/), not project root.
 path = "junit.xml"
 
-# Each smoke test starts its own `xvfb-run -a`, which picks a display by
-# scanning lock files before Xvfb takes one, so concurrent runs pick the same
-# display. Debian's script retries on the next number; Arch's does not, and
-# its `kill` of the lost server then fails the test.
+# Keep headless smoke tests isolated: concurrent Xvfb servers have caused
+# startup/teardown failures in the supported runner environments.
 [test-groups]
 xvfb = { max-threads = 1 }
 
 [[profile.default.overrides]]
-filter = 'binary(render_fixture_smoke)'
+filter = 'binary(render_fixture_smoke) | binary(camera_preview_widget)'
 test-group = 'xvfb'
